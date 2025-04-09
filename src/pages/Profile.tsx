@@ -84,8 +84,8 @@ const Profile = () => {
               />
             </div>
 
-            <div className="flex items-start gap-4">
-              <label htmlFor="profilePicture" className="text-lg font-medium w-32 pt-2">Profile picture:</label>
+            <div className="flex items-center gap-4">
+              <label htmlFor="profilePicture" className="text-lg font-medium w-32">Profile picture:</label>
               <FileUploader
                 id="profilePicture"
                 label="Profile Picture"
@@ -94,8 +94,8 @@ const Profile = () => {
               />
             </div>
 
-            <div className="flex items-start gap-4">
-              <label htmlFor="bannerPicture" className="text-lg font-medium w-32 pt-2">Banner picture:</label>
+            <div className="flex items-center gap-4">
+              <label htmlFor="bannerPicture" className="text-lg font-medium w-32">Banner picture:</label>
               <FileUploader
                 id="bannerPicture"
                 label="Banner Picture"
