@@ -3,7 +3,9 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useProfile } from '@/context/ProfileContext';
+import { toast } from 'sonner';
 import Logo from '@/components/Logo';
+import { initiateSquareOAuth } from '@/services/api';
 
 const Landing = () => {
   const { connectWithSquare, profile, isLoading } = useProfile();
@@ -11,26 +13,51 @@ const Landing = () => {
 
   // Check if user is already authenticated
   useEffect(() => {
+    console.log('Landing page loaded');
+    console.log('Current profile state:', profile);
+    
     if (profile.isConnected) {
+      console.log('User is already connected, redirecting to profile');
       navigate('/profile');
     }
     
     // Handle OAuth callback if present in URL
     const handleOAuthCallback = async () => {
-      if (window.location.search.includes('access_token')) {
+      console.log('Checking for OAuth callback in URL');
+      const urlParams = new URLSearchParams(window.location.search);
+      const accessToken = urlParams.get('access_token');
+      const merchantId = urlParams.get('merchant_id');
+      
+      if (accessToken && merchantId) {
+        console.log('OAuth callback detected, processing...');
         const success = await connectWithSquare();
         if (success) {
+          console.log('Successfully connected with Square, navigating to profile');
           navigate('/profile');
+        } else {
+          console.error('Failed to connect with Square');
+          toast.error('Square authorization failed');
         }
+      } else {
+        console.log('No OAuth callback parameters found in URL');
       }
     };
     
     handleOAuthCallback();
   }, [profile.isConnected, navigate, connectWithSquare]);
 
-  const handleConnectWithSquare = async () => {
-    await connectWithSquare();
-    // No need for navigation here as the OAuth flow will redirect the user
+  const handleConnectWithSquare = () => {
+    console.log('Connect with Square button clicked');
+    const callbackUrl = `${window.location.origin}/auth/callback`;
+    console.log(`Using callback URL: ${callbackUrl}`);
+    
+    try {
+      // Direct call to initiateSquareOAuth instead of going through context
+      initiateSquareOAuth(callbackUrl);
+    } catch (error) {
+      console.error('Error initiating Square OAuth:', error);
+      toast.error('Failed to connect with Square');
+    }
   };
 
   return (
