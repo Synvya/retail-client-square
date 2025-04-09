@@ -1,19 +1,36 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useProfile } from '@/context/ProfileContext';
 import Logo from '@/components/Logo';
 
 const Landing = () => {
-  const { connectWithSquare } = useProfile();
+  const { connectWithSquare, profile, isLoading } = useProfile();
   const navigate = useNavigate();
 
-  const handleConnectWithSquare = async () => {
-    const success = await connectWithSquare();
-    if (success) {
+  // Check if user is already authenticated
+  useEffect(() => {
+    if (profile.isConnected) {
       navigate('/profile');
     }
+    
+    // Handle OAuth callback if present in URL
+    const handleOAuthCallback = async () => {
+      if (window.location.search.includes('access_token')) {
+        const success = await connectWithSquare();
+        if (success) {
+          navigate('/profile');
+        }
+      }
+    };
+    
+    handleOAuthCallback();
+  }, [profile.isConnected, navigate, connectWithSquare]);
+
+  const handleConnectWithSquare = async () => {
+    await connectWithSquare();
+    // No need for navigation here as the OAuth flow will redirect the user
   };
 
   return (
@@ -32,8 +49,9 @@ const Landing = () => {
           onClick={handleConnectWithSquare}
           className="rounded-full text-lg py-6 px-10 border-2 border-synvya-dark bg-white text-synvya-dark hover:bg-gray-50"
           variant="outline"
+          disabled={isLoading}
         >
-          Connect with Square
+          {isLoading ? 'Connecting...' : 'Connect with Square'}
         </Button>
       </div>
     </div>

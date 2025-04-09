@@ -21,6 +21,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Landing />} />
+            <Route path="/auth/callback" element={<Landing />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/visualization" element={<Visualization />} />
             <Route path="*" element={<NotFound />} />

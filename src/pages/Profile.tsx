@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,12 +9,12 @@ import Logo from '@/components/Logo';
 import FileUploader from '@/components/FileUploader';
 
 const Profile = () => {
-  const { profile, updateProfile, saveProfile } = useProfile();
+  const { profile, updateProfile, saveProfile, isLoading } = useProfile();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Redirect to landing if not connected
-  React.useEffect(() => {
+  useEffect(() => {
     if (!profile.isConnected) {
       navigate('/');
     }
@@ -35,6 +35,14 @@ const Profile = () => {
     const { name, value } = e.target;
     updateProfile({ [name]: value });
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-xl">Loading profile data...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white p-4">
@@ -133,7 +141,7 @@ const Profile = () => {
           <div className="flex justify-center gap-4 pt-4">
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isLoading}
               className="rounded-full border-2 border-synvya-dark bg-white text-synvya-dark hover:bg-gray-50 text-lg py-6 px-16"
               variant="outline"
             >

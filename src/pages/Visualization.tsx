@@ -1,20 +1,28 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useProfile } from '@/context/ProfileContext';
 import Logo from '@/components/Logo';
 
 const Visualization = () => {
-  const { profile } = useProfile();
+  const { profile, isLoading } = useProfile();
   const navigate = useNavigate();
 
   // Redirect to landing if not connected
-  React.useEffect(() => {
+  useEffect(() => {
     if (!profile.isConnected) {
       navigate('/');
     }
   }, [profile.isConnected, navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-xl">Loading visualization...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white p-4">
