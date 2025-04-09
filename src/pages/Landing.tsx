@@ -16,8 +16,20 @@ const Landing = () => {
   // Check backend status on mount
   useEffect(() => {
     const checkBackend = async () => {
-      const isOnline = await pingBackend();
-      setBackendStatus(isOnline ? 'online' : 'offline');
+      console.log('Checking backend status...');
+      try {
+        const isOnline = await pingBackend();
+        console.log('Backend status result:', isOnline);
+        setBackendStatus(isOnline ? 'online' : 'offline');
+        
+        if (!isOnline) {
+          toast.error('Cannot connect to backend server. Please make sure it is running at http://localhost:8000');
+        }
+      } catch (error) {
+        console.error('Error checking backend status:', error);
+        setBackendStatus('offline');
+        toast.error('Failed to connect to backend server');
+      }
     };
     
     checkBackend();
@@ -77,11 +89,11 @@ const Landing = () => {
     setIsInitiatingOAuth(true);
     
     try {
-      // Direct call to initiateSquareOAuth with the current origin
+      console.log('Initiating Square OAuth flow');
+      // Using the current origin as the callback URL
       const callbackUrl = `${window.location.origin}/auth/callback`;
       console.log(`Using callback URL: ${callbackUrl}`);
       
-      // Call the OAuth function directly
       const initiated = await initiateSquareOAuth(callbackUrl);
       
       if (!initiated) {
@@ -115,6 +127,12 @@ const Landing = () => {
         {backendStatus === 'offline' && (
           <p className="text-red-600 mb-4">
             Cannot connect to backend server. Please make sure it is running at http://localhost:8000
+          </p>
+        )}
+        
+        {backendStatus === 'online' && (
+          <p className="text-green-600 mb-4">
+            Backend server connected successfully
           </p>
         )}
         

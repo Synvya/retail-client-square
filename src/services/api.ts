@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 // IMPORTANT: Update this to your actual backend URL if not running locally
@@ -55,63 +54,46 @@ export const initiateSquareOAuth = async (redirectUri?: string) => {
     const callbackUrl = redirectUri || `${window.location.origin}/auth/callback`;
     console.log(`Initiating OAuth with callback URL: ${callbackUrl}`);
     
-    // Instead of directly setting window.location, make an API request first
-    // to check if the backend is reachable
-    const response = await api.get('/ping');
-    console.log('Backend ping successful:', response.data);
+    // Instead of making an API call to /ping, use the root endpoint
+    const response = await api.get('/');
+    console.log('Backend connection successful:', response.data);
     
     // Create an anchor element and trigger a click
     const oauthUrl = `${API_BASE_URL}/square/oauth?redirect_uri=${encodeURIComponent(callbackUrl)}`;
     console.log(`Redirecting to OAuth URL: ${oauthUrl}`);
     
-    // Try both methods for maximum compatibility
-    const link = document.createElement('a');
-    link.href = oauthUrl;
-    link.target = '_self';
-    link.rel = 'noopener noreferrer';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    // Fallback to location change if click doesn't work
-    setTimeout(() => {
-      console.log('Using fallback redirect method');
-      window.location.href = oauthUrl;
-    }, 100);
-    
+    // Use window.location.href for reliable redirection
+    window.location.href = oauthUrl;
     return true;
   } catch (error) {
     console.error('Error initiating Square OAuth:', error);
-    // Try direct redirection as a fallback
-    try {
-      console.log('Trying direct redirection as fallback');
-      const callbackUrl = redirectUri || `${window.location.origin}/auth/callback`;
-      const oauthUrl = `${API_BASE_URL}/square/oauth?redirect_uri=${encodeURIComponent(callbackUrl)}`;
-      window.location.href = oauthUrl;
-      return true;
-    } catch (fallbackError) {
-      console.error('Fallback redirection also failed:', fallbackError);
-      return false;
-    }
+    return false;
   }
 };
 
-// Add a simple ping endpoint to check if backend is reachable
+// Modified pingBackend function to use the root endpoint
 export const pingBackend = async () => {
   try {
-    console.log('Pinging backend at:', `${API_BASE_URL}/ping`);
-    const response = await fetch(`${API_BASE_URL}/ping`, {
+    console.log('Checking backend connection at:', `${API_BASE_URL}/`);
+    const response = await fetch(`${API_BASE_URL}/`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
       mode: 'cors',
     });
-    const data = await response.json();
-    console.log('Backend ping response:', data);
-    return true;
+    
+    console.log('Backend connection response status:', response.status);
+    
+    if (response.ok) {
+      console.log('Backend is online');
+      return true;
+    } else {
+      console.error('Backend returned error status:', response.status);
+      return false;
+    }
   } catch (error) {
-    console.error('Backend ping failed:', error);
+    console.error('Backend connection failed:', error);
     return false;
   }
 };
