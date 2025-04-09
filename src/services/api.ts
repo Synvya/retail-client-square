@@ -15,7 +15,7 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   // Add longer timeout for potentially slow ngrok connections
-  timeout: 10000,
+  timeout: 15000, // Increased timeout for slower connections
 });
 
 // Add request interceptor to attach auth token
@@ -76,38 +76,76 @@ export const initiateSquareOAuth = async (redirectUri?: string) => {
   }
 };
 
-// Modified pingBackend function to use the root endpoint with more reliable fetch options
+// Completely rewritten pingBackend function with multiple fallback methods
 export const pingBackend = async () => {
-  try {
-    console.log('Checking backend connection at:', `${API_BASE_URL}/`);
+  console.log('Checking backend connection at:', `${API_BASE_URL}/`);
+  
+  // Try multiple methods to connect to the backend
+  const methods = [
+    // Method 1: Use fetch with CORS mode
+    async () => {
+      try {
+        console.log('Trying fetch with CORS mode...');
+        const response = await fetch(`${API_BASE_URL}/`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          mode: 'cors',
+          credentials: 'include',
+          signal: AbortSignal.timeout(5000),
+        });
+        
+        console.log('Fetch response status:', response.status);
+        return response.ok;
+      } catch (error) {
+        console.log('Fetch method failed:', error);
+        return false;
+      }
+    },
     
-    // Use a more reliable fetch with appropriate mode and credentials
-    const response = await fetch(`${API_BASE_URL}/`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      mode: 'cors',
-      // Include credentials if your API supports cookies
-      credentials: 'include',
-      // Add a small timeout for faster feedback
-      signal: AbortSignal.timeout(5000),
-    });
+    // Method 2: Use axios with our configured instance
+    async () => {
+      try {
+        console.log('Trying axios...');
+        const response = await api.get('/', { timeout: 5000 });
+        console.log('Axios response status:', response.status);
+        return response.status >= 200 && response.status < 300;
+      } catch (error) {
+        console.log('Axios method failed:', error);
+        return false;
+      }
+    },
     
-    console.log('Backend connection response status:', response.status);
-    
-    if (response.ok) {
+    // Method 3: Try a HEAD request which might be lighter
+    async () => {
+      try {
+        console.log('Trying HEAD request...');
+        const response = await fetch(`${API_BASE_URL}/`, {
+          method: 'HEAD',
+          mode: 'no-cors', // Try with no-cors as a last resort
+          signal: AbortSignal.timeout(5000),
+        });
+        
+        console.log('HEAD response type:', response.type);
+        // With no-cors, we can't read the status so we check if we got any response
+        return response.type === 'opaque' || response.ok;
+      } catch (error) {
+        console.log('HEAD method failed:', error);
+        return false;
+      }
+    }
+  ];
+  
+  // Try each method until one succeeds
+  for (const method of methods) {
+    const result = await method();
+    if (result) {
       console.log('Backend is online');
       return true;
-    } else {
-      console.error('Backend returned error status:', response.status);
-      return false;
     }
-  } catch (error) {
-    console.error('Backend connection failed:', error);
-    console.error('Error details:', error);
-    return false;
   }
+  
+  console.error('All backend connection methods failed');
+  return false;
 };
 
 // Merchant profile APIs

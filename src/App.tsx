@@ -11,7 +11,7 @@ import Visualization from "./pages/Visualization";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 
-// Initialize API URL from localStorage if available
+// Initialize API URL from localStorage if available, with improved error handling
 const initializeApiUrl = () => {
   try {
     const savedApiUrl = localStorage.getItem('api_base_url');
@@ -19,17 +19,29 @@ const initializeApiUrl = () => {
       console.log('Loading saved API URL from localStorage:', savedApiUrl);
       (window as any).API_BASE_URL = savedApiUrl;
     } else {
-      console.log('No saved API URL found, using default: http://localhost:8000');
+      // Check if we're in a Lovable environment by checking the domain
+      const isLovableEnvironment = window.location.hostname.includes('lovableproject.com');
+      
+      if (isLovableEnvironment) {
+        // For Lovable hosted projects, suggest using ngrok
+        console.log('Running in Lovable environment, expecting ngrok URL');
+      } else {
+        // For local development, use localhost
+        console.log('No saved API URL found, using default: http://localhost:8000');
+        (window as any).API_BASE_URL = 'http://localhost:8000';
+      }
     }
   } catch (error) {
     console.error('Error initializing API URL:', error);
+    // Fall back to localhost in case of any issues
+    (window as any).API_BASE_URL = 'http://localhost:8000';
   }
 };
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
+      retry: 2, // Increased retries for better reliability
       refetchOnWindowFocus: false,
       staleTime: 300000, // 5 minutes
     },
