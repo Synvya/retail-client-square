@@ -25,7 +25,7 @@ const Landing = () => {
         </div>
         
         <p className="text-xl text-synvya-dark text-center mb-16 mt-4">
-          Powerful presence for the agentic era
+          Powering commerce for the agentic era
         </p>
         
         <Button 
