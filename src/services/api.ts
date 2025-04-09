@@ -1,7 +1,10 @@
+
 import axios from 'axios';
 
-// IMPORTANT: Update this to your actual backend URL if not running locally
-const API_BASE_URL = 'http://localhost:8000';
+// Get the API URL from a global variable if available, or use the default
+// To override this in development, you can set window.API_BASE_URL before the app loads
+// For production, deploy the backend to a public URL
+const API_BASE_URL = (window as any).API_BASE_URL || 'http://localhost:8000';
 
 console.log('API_BASE_URL:', API_BASE_URL);
 
