@@ -1,7 +1,10 @@
 
 import axios from 'axios';
 
+// IMPORTANT: Update this to your actual backend URL if not running locally
 const API_BASE_URL = 'http://localhost:8000';
+
+console.log('API_BASE_URL:', API_BASE_URL);
 
 // Create axios instance with base URL
 const api = axios.create({
@@ -14,31 +17,101 @@ const api = axios.create({
 // Add request interceptor to attach auth token
 api.interceptors.request.use(
   (config) => {
+    console.log(`Making ${config.method?.toUpperCase()} request to: ${config.baseURL}${config.url}`);
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('Auth token attached to request');
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    console.error('Request interceptor error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor for better debugging
+api.interceptors.response.use(
+  (response) => {
+    console.log(`Response from ${response.config.url}:`, response.status);
+    return response;
+  },
+  (error) => {
+    console.error('API error response:', error);
+    if (error.response) {
+      console.error('Error status:', error.response.status);
+      console.error('Error data:', error.response.data);
+    } else if (error.request) {
+      console.error('No response received. Request:', error.request);
+    }
+    return Promise.reject(error);
+  }
 );
 
 // Square OAuth endpoints
-export const initiateSquareOAuth = (redirectUri?: string) => {
+export const initiateSquareOAuth = async (redirectUri?: string) => {
   try {
     const callbackUrl = redirectUri || `${window.location.origin}/auth/callback`;
     console.log(`Initiating OAuth with callback URL: ${callbackUrl}`);
     
-    // Directly construct and redirect to the OAuth URL
-    // This avoids any routing issues by doing a full window redirect
+    // Instead of directly setting window.location, make an API request first
+    // to check if the backend is reachable
+    const response = await api.get('/ping');
+    console.log('Backend ping successful:', response.data);
+    
+    // Create an anchor element and trigger a click
     const oauthUrl = `${API_BASE_URL}/square/oauth?redirect_uri=${encodeURIComponent(callbackUrl)}`;
     console.log(`Redirecting to OAuth URL: ${oauthUrl}`);
     
-    // Use window.location.href for a full page redirect
-    window.location.href = oauthUrl;
+    // Try both methods for maximum compatibility
+    const link = document.createElement('a');
+    link.href = oauthUrl;
+    link.target = '_self';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Fallback to location change if click doesn't work
+    setTimeout(() => {
+      console.log('Using fallback redirect method');
+      window.location.href = oauthUrl;
+    }, 100);
+    
     return true;
   } catch (error) {
     console.error('Error initiating Square OAuth:', error);
+    // Try direct redirection as a fallback
+    try {
+      console.log('Trying direct redirection as fallback');
+      const callbackUrl = redirectUri || `${window.location.origin}/auth/callback`;
+      const oauthUrl = `${API_BASE_URL}/square/oauth?redirect_uri=${encodeURIComponent(callbackUrl)}`;
+      window.location.href = oauthUrl;
+      return true;
+    } catch (fallbackError) {
+      console.error('Fallback redirection also failed:', fallbackError);
+      return false;
+    }
+  }
+};
+
+// Add a simple ping endpoint to check if backend is reachable
+export const pingBackend = async () => {
+  try {
+    console.log('Pinging backend at:', `${API_BASE_URL}/ping`);
+    const response = await fetch(`${API_BASE_URL}/ping`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      mode: 'cors',
+    });
+    const data = await response.json();
+    console.log('Backend ping response:', data);
+    return true;
+  } catch (error) {
+    console.error('Backend ping failed:', error);
     return false;
   }
 };

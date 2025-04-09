@@ -1,20 +1,33 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useProfile } from '@/context/ProfileContext';
 import { toast } from 'sonner';
 import Logo from '@/components/Logo';
-import { initiateSquareOAuth } from '@/services/api';
+import { initiateSquareOAuth, pingBackend } from '@/services/api';
 
 const Landing = () => {
   const { connectWithSquare, profile, isLoading } = useProfile();
   const navigate = useNavigate();
+  const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+  const [isInitiatingOAuth, setIsInitiatingOAuth] = useState(false);
+
+  // Check backend status on mount
+  useEffect(() => {
+    const checkBackend = async () => {
+      const isOnline = await pingBackend();
+      setBackendStatus(isOnline ? 'online' : 'offline');
+    };
+    
+    checkBackend();
+  }, []);
 
   // Check if user is already authenticated
   useEffect(() => {
     console.log('Landing page loaded');
     console.log('Current profile state:', profile);
+    console.log('Backend status:', backendStatus);
     
     if (profile.isConnected) {
       console.log('User is already connected, redirecting to profile');
@@ -51,25 +64,35 @@ const Landing = () => {
     };
     
     handleOAuthCallback();
-  }, [profile.isConnected, navigate, connectWithSquare]);
+  }, [profile.isConnected, navigate, connectWithSquare, backendStatus]);
 
-  const handleConnectWithSquare = () => {
+  const handleConnectWithSquare = async () => {
     console.log('Connect with Square button clicked');
+    
+    if (backendStatus === 'offline') {
+      toast.error('Cannot connect to backend server. Please make sure it is running at http://localhost:8000');
+      return;
+    }
+    
+    setIsInitiatingOAuth(true);
+    
     try {
       // Direct call to initiateSquareOAuth with the current origin
       const callbackUrl = `${window.location.origin}/auth/callback`;
       console.log(`Using callback URL: ${callbackUrl}`);
       
       // Call the OAuth function directly
-      const initiated = initiateSquareOAuth(callbackUrl);
+      const initiated = await initiateSquareOAuth(callbackUrl);
       
       if (!initiated) {
         console.error('Failed to initiate Square OAuth');
-        toast.error('Failed to connect with Square');
+        toast.error('Failed to connect with Square. Please check console for details.');
       }
     } catch (error) {
       console.error('Error in handleConnectWithSquare:', error);
-      toast.error('Failed to connect with Square');
+      toast.error('Failed to connect with Square. Please check console for details.');
+    } finally {
+      setIsInitiatingOAuth(false);
     }
   };
 
@@ -85,13 +108,23 @@ const Landing = () => {
           Powering commerce for the agentic era
         </p>
         
+        {backendStatus === 'checking' && (
+          <p className="text-yellow-600 mb-4">Checking backend connection...</p>
+        )}
+        
+        {backendStatus === 'offline' && (
+          <p className="text-red-600 mb-4">
+            Cannot connect to backend server. Please make sure it is running at http://localhost:8000
+          </p>
+        )}
+        
         <Button 
           onClick={handleConnectWithSquare}
           className="rounded-full text-lg py-6 px-10 border-2 border-synvya-dark bg-white text-synvya-dark hover:bg-gray-50"
           variant="outline"
-          disabled={isLoading}
+          disabled={isLoading || isInitiatingOAuth || backendStatus !== 'online'}
         >
-          {isLoading ? 'Connecting...' : 'Connect with Square'}
+          {isLoading || isInitiatingOAuth ? 'Connecting...' : 'Connect with Square'}
         </Button>
       </div>
     </div>
