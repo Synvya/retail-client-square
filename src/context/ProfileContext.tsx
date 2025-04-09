@@ -13,6 +13,7 @@ interface Profile {
   website: string;
   categories: string;
   isConnected: boolean;
+  publicKey: string;
 }
 
 interface ProfileContextType {
@@ -34,6 +35,7 @@ const defaultProfile: Profile = {
   website: '',
   categories: '',
   isConnected: false,
+  publicKey: '',
 };
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -65,6 +67,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
           categories: 'retail, food, service',
           profilePictureUrl: null,
           bannerPictureUrl: null,
+          publicKey: 'npub123', // Mock public key from backend
         });
         toast.success('Successfully connected with Square!');
         return true;

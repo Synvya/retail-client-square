@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProfileProvider } from "./context/ProfileContext";
 import Landing from "./pages/Landing";
 import Profile from "./pages/Profile";
+import Visualization from "./pages/Visualization";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/visualization" element={<Visualization />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

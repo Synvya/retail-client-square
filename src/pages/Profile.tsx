@@ -130,7 +130,7 @@ const Profile = () => {
             </div>
           </div>
 
-          <div className="flex justify-center pt-4">
+          <div className="flex justify-center gap-4 pt-4">
             <Button
               type="submit"
               disabled={isSubmitting}
@@ -138,6 +138,15 @@ const Profile = () => {
               variant="outline"
             >
               {isSubmitting ? 'Updating...' : 'Update'}
+            </Button>
+            
+            <Button
+              type="button"
+              onClick={() => navigate('/visualization')}
+              className="rounded-full border-2 border-synvya-dark bg-white text-synvya-dark hover:bg-gray-50 text-lg py-6 px-16"
+              variant="outline"
+            >
+              View
             </Button>
           </div>
         </form>
