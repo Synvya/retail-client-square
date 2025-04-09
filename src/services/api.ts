@@ -14,6 +14,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Add longer timeout for potentially slow ngrok connections
+  timeout: 10000,
 });
 
 // Add request interceptor to attach auth token
@@ -74,16 +76,22 @@ export const initiateSquareOAuth = async (redirectUri?: string) => {
   }
 };
 
-// Modified pingBackend function to use the root endpoint
+// Modified pingBackend function to use the root endpoint with more reliable fetch options
 export const pingBackend = async () => {
   try {
     console.log('Checking backend connection at:', `${API_BASE_URL}/`);
+    
+    // Use a more reliable fetch with appropriate mode and credentials
     const response = await fetch(`${API_BASE_URL}/`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
       mode: 'cors',
+      // Include credentials if your API supports cookies
+      credentials: 'include',
+      // Add a small timeout for faster feedback
+      signal: AbortSignal.timeout(5000),
     });
     
     console.log('Backend connection response status:', response.status);
@@ -97,6 +105,7 @@ export const pingBackend = async () => {
     }
   } catch (error) {
     console.error('Backend connection failed:', error);
+    console.error('Error details:', error);
     return false;
   }
 };

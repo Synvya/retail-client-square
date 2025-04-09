@@ -7,7 +7,8 @@ import { toast } from 'sonner';
 import Logo from '@/components/Logo';
 import { initiateSquareOAuth, pingBackend } from '@/services/api';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, RefreshCw } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 const Landing = () => {
   const { connectWithSquare, profile, isLoading } = useProfile();
@@ -15,28 +16,37 @@ const Landing = () => {
   const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking');
   const [isInitiatingOAuth, setIsInitiatingOAuth] = useState(false);
   const [apiUrl, setApiUrl] = useState<string>((window as any).API_BASE_URL || 'http://localhost:8000');
+  const [newApiUrl, setNewApiUrl] = useState<string>(apiUrl);
+  const [isCheckingConnection, setIsCheckingConnection] = useState(false);
 
   // Check backend status on mount
   useEffect(() => {
-    const checkBackend = async () => {
-      console.log('Checking backend status...');
-      try {
-        const isOnline = await pingBackend();
-        console.log('Backend status result:', isOnline);
-        setBackendStatus(isOnline ? 'online' : 'offline');
-        
-        if (!isOnline) {
-          toast.error('Cannot connect to backend server. Please follow the instructions to set up your backend connection.');
-        }
-      } catch (error) {
-        console.error('Error checking backend status:', error);
-        setBackendStatus('offline');
-        toast.error('Failed to connect to backend server');
-      }
-    };
-    
-    checkBackend();
+    checkBackendConnection();
   }, []);
+
+  const checkBackendConnection = async () => {
+    console.log('Checking backend status...');
+    setIsCheckingConnection(true);
+    setBackendStatus('checking');
+    
+    try {
+      const isOnline = await pingBackend();
+      console.log('Backend status result:', isOnline);
+      setBackendStatus(isOnline ? 'online' : 'offline');
+      
+      if (isOnline) {
+        toast.success('Connected to backend successfully!');
+      } else {
+        toast.error('Cannot connect to backend server. Please make sure your ngrok tunnel is active and properly configured.');
+      }
+    } catch (error) {
+      console.error('Error checking backend status:', error);
+      setBackendStatus('offline');
+      toast.error('Failed to connect to backend server');
+    } finally {
+      setIsCheckingConnection(false);
+    }
+  };
 
   // Check if user is already authenticated
   useEffect(() => {
@@ -112,14 +122,28 @@ const Landing = () => {
   };
 
   const handleSetApiUrl = () => {
-    const newUrl = prompt('Enter your ngrok or public backend URL:', apiUrl);
-    if (newUrl && newUrl !== apiUrl) {
-      (window as any).API_BASE_URL = newUrl;
-      setApiUrl(newUrl);
-      localStorage.setItem('api_base_url', newUrl);
-      toast.success('API URL updated! Please refresh the page to apply changes.');
-      // Force reload to apply the new URL
-      window.location.reload();
+    if (!newApiUrl) {
+      toast.error('Please enter a valid URL');
+      return;
+    }
+    
+    // Validate URL format
+    try {
+      new URL(newApiUrl);
+    } catch (e) {
+      toast.error('Please enter a valid URL including http:// or https://');
+      return;
+    }
+    
+    if (newApiUrl !== apiUrl) {
+      console.log(`Updating API URL from ${apiUrl} to ${newApiUrl}`);
+      (window as any).API_BASE_URL = newApiUrl;
+      setApiUrl(newApiUrl);
+      localStorage.setItem('api_base_url', newApiUrl);
+      toast.success('API URL updated! Testing connection...');
+      
+      // Test the new connection
+      setTimeout(checkBackendConnection, 500);
     }
   };
 
@@ -136,24 +160,60 @@ const Landing = () => {
         </p>
         
         {backendStatus === 'checking' && (
-          <p className="text-yellow-600 mb-4">Checking backend connection...</p>
+          <p className="text-yellow-600 mb-4 flex items-center">
+            <RefreshCw className="animate-spin h-4 w-4 mr-2" />
+            Checking backend connection...
+          </p>
         )}
         
         {backendStatus === 'offline' && (
           <Alert variant="destructive" className="mb-6">
             <AlertTitle>Backend Connection Failed</AlertTitle>
             <AlertDescription>
-              <p className="mb-2">The application cannot connect to your local backend at {apiUrl}.</p>
-              <p className="mb-2">Since you're running the backend locally at 127.0.0.1:8000, you need to create a public URL that can reach your local server.</p>
+              <p className="mb-2">The application cannot connect to your backend at {apiUrl}.</p>
+              <p className="mb-2">Since you're running the backend locally at 127.0.0.1:8000, you need to create a public URL using ngrok that can reach your local server.</p>
               <p className="font-bold mb-2">Solutions:</p>
               <ol className="list-decimal list-inside mb-4">
-                <li className="mb-1">Install ngrok: <a href="https://ngrok.com/download" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline inline-flex items-center">ngrok.com/download <ExternalLink className="h-3 w-3 ml-1" /></a></li>
-                <li className="mb-1">Run your local server: <code className="bg-gray-100 px-2 py-1 rounded">127.0.0.1:8000</code></li>
+                <li className="mb-1">Ensure your local server is running: <code className="bg-gray-100 px-2 py-1 rounded">127.0.0.1:8000</code></li>
                 <li className="mb-1">In a separate terminal run: <code className="bg-gray-100 px-2 py-1 rounded">ngrok http 8000</code></li>
-                <li>Click the button below to set the public URL provided by ngrok</li>
+                <li className="mb-1">Copy the public HTTPS URL provided by ngrok (e.g. <code className="bg-gray-100 px-2 py-1 rounded">https://a1b2-123-45-67-89.ngrok-free.app</code>)</li>
+                <li>Enter the ngrok URL below and click "Update & Test Connection"</li>
               </ol>
-              <Button onClick={handleSetApiUrl} variant="outline" className="w-full">
-                Configure Backend URL
+              
+              <div className="flex items-center space-x-2 mb-4">
+                <Input 
+                  value={newApiUrl} 
+                  onChange={(e) => setNewApiUrl(e.target.value)} 
+                  placeholder="https://your-ngrok-url.ngrok-free.app"
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={handleSetApiUrl} 
+                  variant="outline"
+                  disabled={isCheckingConnection}
+                >
+                  {isCheckingConnection ? 'Testing...' : 'Update & Test'}
+                </Button>
+              </div>
+              
+              <p className="text-sm text-red-600 mb-2">Common issues:</p>
+              <ul className="list-disc list-inside mb-2 text-sm">
+                <li>Make sure to include <strong>https://</strong> in your ngrok URL</li>
+                <li>Check that your ngrok tunnel is still active</li>
+                <li>Ensure your backend server allows CORS from this domain</li>
+              </ul>
+              
+              <Button 
+                onClick={checkBackendConnection} 
+                variant="secondary" 
+                className="w-full mt-2"
+                disabled={isCheckingConnection}
+              >
+                {isCheckingConnection ? (
+                  <><RefreshCw className="animate-spin h-4 w-4 mr-2" /> Testing Connection...</>
+                ) : (
+                  <>Retry Connection Test</>
+                )}
               </Button>
             </AlertDescription>
           </Alert>
@@ -178,16 +238,20 @@ const Landing = () => {
         </Button>
         
         {backendStatus === 'online' && (
-          <p className="mt-4 text-sm text-gray-500">
-            Connected to backend at: {apiUrl}
+          <div className="mt-4 text-sm text-gray-500 flex items-center space-x-2">
+            <span>Connected to backend at: {apiUrl}</span>
             <Button 
               variant="link" 
-              className="p-0 h-auto text-sm underline ml-2" 
-              onClick={handleSetApiUrl}
+              className="p-0 h-auto text-sm underline" 
+              onClick={() => {
+                setNewApiUrl(apiUrl);
+                const urlInput = document.querySelector('input');
+                if (urlInput) urlInput.focus();
+              }}
             >
               Change
             </Button>
-          </p>
+          </div>
         )}
       </div>
     </div>

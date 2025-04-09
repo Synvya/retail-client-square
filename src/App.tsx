@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProfileProvider } from "./context/ProfileContext";
 import Landing from "./pages/Landing";
 import Profile from "./pages/Profile";
@@ -13,10 +13,16 @@ import { useEffect } from "react";
 
 // Initialize API URL from localStorage if available
 const initializeApiUrl = () => {
-  const savedApiUrl = localStorage.getItem('api_base_url');
-  if (savedApiUrl) {
-    console.log('Loading saved API URL from localStorage:', savedApiUrl);
-    (window as any).API_BASE_URL = savedApiUrl;
+  try {
+    const savedApiUrl = localStorage.getItem('api_base_url');
+    if (savedApiUrl) {
+      console.log('Loading saved API URL from localStorage:', savedApiUrl);
+      (window as any).API_BASE_URL = savedApiUrl;
+    } else {
+      console.log('No saved API URL found, using default: http://localhost:8000');
+    }
+  } catch (error) {
+    console.error('Error initializing API URL:', error);
   }
 };
 
@@ -25,6 +31,7 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      staleTime: 300000, // 5 minutes
     },
   },
 });
