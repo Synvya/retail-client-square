@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -48,15 +47,17 @@ const Landing = () => {
     }
   };
 
-  // Check if user is already authenticated
+  // Check if user is already authenticated and handle OAuth callback
   useEffect(() => {
     console.log('Landing page loaded');
     console.log('Current profile state:', profile);
     console.log('Backend status:', backendStatus);
     
+    // If already connected, navigate to profile
     if (profile.isConnected) {
       console.log('User is already connected, redirecting to profile');
       navigate('/profile');
+      return;
     }
     
     // Handle OAuth callback if present in URL
@@ -65,6 +66,14 @@ const Landing = () => {
       const urlParams = new URLSearchParams(window.location.search);
       const accessToken = urlParams.get('access_token');
       const merchantId = urlParams.get('merchant_id');
+      const error = urlParams.get('error');
+      
+      // Handle any errors returned in the callback
+      if (error) {
+        console.error('OAuth error returned:', error);
+        toast.error(`Square authorization failed: ${error}`);
+        return false;
+      }
       
       if (accessToken && merchantId) {
         console.log('OAuth callback detected, processing...');
@@ -75,20 +84,34 @@ const Landing = () => {
         localStorage.setItem('access_token', accessToken);
         localStorage.setItem('merchant_id', merchantId);
         
+        // Remove query parameters from URL to prevent reprocessing
+        if (window.history && window.history.replaceState) {
+          // Remove the query parameters but keep the path
+          const cleanUrl = window.location.href.split('?')[0];
+          window.history.replaceState({}, document.title, cleanUrl);
+        }
+        
         const success = await connectWithSquare();
         if (success) {
           console.log('Successfully connected with Square, navigating to profile');
           navigate('/profile');
+          return true;
         } else {
           console.error('Failed to connect with Square');
           toast.error('Square authorization failed');
+          return false;
         }
       } else {
         console.log('No OAuth callback parameters found in URL');
+        return false;
       }
     };
     
-    handleOAuthCallback();
+    // Only handle OAuth callback if we're on the callback route
+    if (window.location.pathname.includes('/auth/callback') || window.location.search.includes('access_token')) {
+      console.log('On callback route, processing OAuth parameters');
+      handleOAuthCallback();
+    }
   }, [profile.isConnected, navigate, connectWithSquare, backendStatus]);
 
   const handleConnectWithSquare = async () => {
@@ -103,8 +126,10 @@ const Landing = () => {
     
     try {
       console.log('Initiating Square OAuth flow');
-      // Using the current origin as the callback URL
-      const callbackUrl = `${window.location.origin}/auth/callback`;
+      // Using the current origin as the callback URL with explicit protocol
+      const protocol = window.location.protocol;
+      const host = window.location.host;
+      const callbackUrl = `${protocol}//${host}/auth/callback`;
       console.log(`Using callback URL: ${callbackUrl}`);
       
       const initiated = await initiateSquareOAuth(callbackUrl);
@@ -201,6 +226,7 @@ const Landing = () => {
                 <li>Make sure to include <strong>https://</strong> in your ngrok URL</li>
                 <li>Check that your ngrok tunnel is still active</li>
                 <li>Ensure your backend server allows CORS from this domain</li>
+                <li>If using a free ngrok plan, you might need to restart your tunnel frequently</li>
               </ul>
               
               <Button 

@@ -53,22 +53,28 @@ api.interceptors.response.use(
   }
 );
 
-// Square OAuth endpoints
+// Square OAuth endpoints - Completely rewritten to improve ngrok compatibility
 export const initiateSquareOAuth = async (redirectUri?: string) => {
   try {
+    // Use the explicitly provided callback URL or build one from the current origin
     const callbackUrl = redirectUri || `${window.location.origin}/auth/callback`;
     console.log(`Initiating OAuth with callback URL: ${callbackUrl}`);
     
-    // Instead of making an API call to /ping, use the root endpoint
-    const response = await api.get('/');
-    console.log('Backend connection successful:', response.data);
+    // Test backend connection before initiating OAuth
+    const isBackendReachable = await pingBackend();
+    if (!isBackendReachable) {
+      console.error('Backend server is not reachable. Cannot initiate OAuth flow.');
+      return false;
+    }
     
-    // Create an anchor element and trigger a click
+    // Instead of directly redirecting, construct the OAuth URL with proper encoding
     const oauthUrl = `${API_BASE_URL}/square/oauth?redirect_uri=${encodeURIComponent(callbackUrl)}`;
     console.log(`Redirecting to OAuth URL: ${oauthUrl}`);
     
-    // Use window.location.href for reliable redirection
+    // Open the OAuth URL in the same window
     window.location.href = oauthUrl;
+    
+    // Return true to indicate that redirection has been initiated
     return true;
   } catch (error) {
     console.error('Error initiating Square OAuth:', error);
