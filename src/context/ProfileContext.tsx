@@ -78,8 +78,12 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         .then(success => {
           if (success) {
             console.log('Successfully fetched profile data');
+            setProfile(prev => ({ ...prev, isConnected: true }));
           } else {
             console.error('Failed to fetch profile data');
+            // On failure, clear tokens
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('merchant_id');
           }
         })
         .catch(err => {
@@ -117,7 +121,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         website: merchantProfile.website || '',
         categories: merchantProfile.hashtags?.join(', ') || '',
         isConnected: true,
-        publicKey: merchantProfile.nip05?.split('@')[0] || '',
+        publicKey: merchantProfile.nip05?.split('@')?.[0] || '',
       });
       
       return true;
@@ -130,20 +134,20 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   // Function to handle Square OAuth callback
   const handleOAuthCallback = () => {
     console.log('Processing OAuth callback');
-    const urlParams = new URLSearchParams(window.location.search);
-    const accessToken = urlParams.get('access_token');
-    const merchantId = urlParams.get('merchant_id');
-    const profilePublished = urlParams.get('profile_published');
+    
+    // We don't need to check URL params here as that's now handled in the Landing component
+    // Just verify if tokens are stored in localStorage
+    const accessToken = localStorage.getItem('access_token');
+    const merchantId = localStorage.getItem('merchant_id');
+    const profilePublished = localStorage.getItem('profile_published');
 
-    console.log('Received parameters:');
+    console.log('Checking stored credentials:');
     console.log('- access_token exists:', !!accessToken);
     console.log('- merchant_id exists:', !!merchantId);
     console.log('- profile_published:', profilePublished);
 
     if (accessToken && merchantId) {
-      console.log('Storing credentials in localStorage');
-      localStorage.setItem('access_token', accessToken);
-      localStorage.setItem('merchant_id', merchantId);
+      console.log('Valid credentials found');
       
       // Show appropriate message based on profile_published
       if (profilePublished === 'true') {
@@ -158,7 +162,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       return true;
     }
     
-    console.log('Invalid or missing OAuth callback parameters');
+    console.log('Invalid or missing credentials');
     return false;
   };
 
@@ -166,19 +170,24 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   const connectWithSquare = async (): Promise<boolean> => {
     try {
       console.log('Connecting with Square');
-      // Check if we're on the callback route with query parameters
-      if (window.location.pathname.includes('/auth/callback') || window.location.search.includes('access_token')) {
+      setIsLoading(true);
+      
+      // If we're already on the callback route, process the token
+      if (window.location.pathname.includes('/auth/callback') || 
+          window.location.search.includes('access_token')) {
         console.log('On callback route, processing parameters');
         return handleOAuthCallback();
       }
       
-      console.log('Not on callback route, this function shouldn\'t be called directly');
-      // We should never reach here as the OAuth initiation is now handled directly in the Landing component
+      // This should never happen as OAuth is initiated directly in Landing component
+      console.log('Not on callback route, unexpected call to connectWithSquare');
       return false;
     } catch (error) {
       console.error('Error connecting with Square:', error);
       toast.error('An error occurred while connecting with Square.');
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -236,6 +245,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     console.log('Resetting profile and clearing credentials');
     localStorage.removeItem('access_token');
     localStorage.removeItem('merchant_id');
+    localStorage.removeItem('profile_published');
     setProfile(defaultProfile);
   };
 

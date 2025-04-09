@@ -30,6 +30,13 @@ const Landing = () => {
       
       if (accessToken && merchantId) {
         console.log('OAuth callback detected, processing...');
+        console.log('Access token:', accessToken.substring(0, 10) + '...');
+        console.log('Merchant ID:', merchantId);
+        
+        // Store the tokens immediately to ensure they're available
+        localStorage.setItem('access_token', accessToken);
+        localStorage.setItem('merchant_id', merchantId);
+        
         const success = await connectWithSquare();
         if (success) {
           console.log('Successfully connected with Square, navigating to profile');
@@ -48,14 +55,20 @@ const Landing = () => {
 
   const handleConnectWithSquare = () => {
     console.log('Connect with Square button clicked');
-    const callbackUrl = `${window.location.origin}/auth/callback`;
-    console.log(`Using callback URL: ${callbackUrl}`);
-    
     try {
-      // Direct call to initiateSquareOAuth instead of going through context
-      initiateSquareOAuth(callbackUrl);
+      // Direct call to initiateSquareOAuth with the current origin
+      const callbackUrl = `${window.location.origin}/auth/callback`;
+      console.log(`Using callback URL: ${callbackUrl}`);
+      
+      // Call the OAuth function directly
+      const initiated = initiateSquareOAuth(callbackUrl);
+      
+      if (!initiated) {
+        console.error('Failed to initiate Square OAuth');
+        toast.error('Failed to connect with Square');
+      }
     } catch (error) {
-      console.error('Error initiating Square OAuth:', error);
+      console.error('Error in handleConnectWithSquare:', error);
       toast.error('Failed to connect with Square');
     }
   };
