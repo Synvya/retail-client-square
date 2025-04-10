@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import Logo from '@/components/Logo';
 import { initiateSquareOAuth, pingBackend } from '@/services/api';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, AlertCircle } from 'lucide-react';
 
 const Landing = () => {
   const { connectWithSquare, profile, isLoading } = useProfile();
@@ -15,6 +15,7 @@ const Landing = () => {
   const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking');
   const [isInitiatingOAuth, setIsInitiatingOAuth] = useState(false);
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
+  const [oauthError, setOauthError] = useState<string | null>(null);
 
   // Check backend status on mount
   useEffect(() => {
@@ -70,6 +71,7 @@ const Landing = () => {
       if (error) {
         console.error('OAuth error returned:', error);
         toast.error(`Square authorization failed: ${error}`);
+        setOauthError(`Square authorization failed: ${error}`);
         return false;
       }
       
@@ -97,6 +99,7 @@ const Landing = () => {
         } else {
           console.error('Failed to connect with Square');
           toast.error('Square authorization failed');
+          setOauthError('Failed to connect with Square after authorization. Please try again.');
           return false;
         }
       } else {
@@ -105,7 +108,7 @@ const Landing = () => {
       }
     };
     
-    // Only handle OAuth callback if we're on the callback route
+    // Only handle OAuth callback if we're on the callback route or have query parameters
     if (window.location.pathname.includes('/auth/callback') || window.location.search.includes('access_token')) {
       console.log('On callback route, processing OAuth parameters');
       handleOAuthCallback();
@@ -114,6 +117,7 @@ const Landing = () => {
 
   const handleConnectWithSquare = async () => {
     console.log('Connect with Square button clicked');
+    setOauthError(null);
     
     if (backendStatus === 'offline') {
       toast.error('Cannot connect to backend server. Please try again later.');
@@ -130,16 +134,13 @@ const Landing = () => {
       const callbackUrl = `${protocol}//${host}/auth/callback`;
       console.log(`Using callback URL: ${callbackUrl}`);
       
-      const initiated = await initiateSquareOAuth(callbackUrl);
-      
-      if (!initiated) {
-        console.error('Failed to initiate Square OAuth');
-        toast.error('Failed to connect with Square. Please try again later.');
-      }
+      await initiateSquareOAuth(callbackUrl);
+      // No need to check the return value as initiateSquareOAuth now throws errors
+      // The redirect will happen automatically if successful
     } catch (error) {
       console.error('Error in handleConnectWithSquare:', error);
       toast.error('Failed to connect with Square. Please try again later.');
-    } finally {
+      setOauthError('Failed to initiate Square connection. Please try again later.');
       setIsInitiatingOAuth(false);
     }
   };
@@ -192,6 +193,14 @@ const Landing = () => {
             <AlertDescription className="text-green-700">
               Successfully connected to backend server
             </AlertDescription>
+          </Alert>
+        )}
+        
+        {oauthError && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4 mr-2" />
+            <AlertTitle>Connection Error</AlertTitle>
+            <AlertDescription>{oauthError}</AlertDescription>
           </Alert>
         )}
         
