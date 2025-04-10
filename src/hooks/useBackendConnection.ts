@@ -6,77 +6,72 @@ import { pingBackend } from '@/services/api';
 export const useBackendConnection = () => {
   const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking');
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
-  const hasNotifiedSuccess = useRef(false);
-  const isInitialCheck = useRef(true);
+  const hasNotifiedRef = useRef(false);
   
-  const checkBackendConnection = async () => {
+  const checkBackendConnection = async (silent = false) => {
     if (isCheckingConnection) return; // Prevent multiple simultaneous checks
     
-    console.log('Checking backend status...');
     setIsCheckingConnection(true);
     setBackendStatus('checking');
     
     try {
       const isOnline = await pingBackend();
-      console.log('Backend status result:', isOnline);
       
       if (isOnline) {
         setBackendStatus('online');
-        // Only show success toast once per session and not on initial check
-        if (!hasNotifiedSuccess.current && !isInitialCheck.current) {
+        // Only show success toast once per session and not on silent checks
+        if (!hasNotifiedRef.current && !silent) {
           toast.success('Connected to backend successfully!');
-          hasNotifiedSuccess.current = true;
+          hasNotifiedRef.current = true;
         }
       } else {
-        console.error('Backend connection failed');
         setBackendStatus('offline');
-        // Reset success notification flag when offline
-        hasNotifiedSuccess.current = false;
+        // Reset notification flag when offline
+        hasNotifiedRef.current = false;
         
-        // Only show error toast if not during initial silent check
-        if (!isInitialCheck.current) {
+        // Only show error toast if not a silent check
+        if (!silent) {
           toast.error('Cannot connect to backend server. Please check if the server is running.');
         }
       }
     } catch (error) {
       console.error('Error checking backend status:', error);
       setBackendStatus('offline');
-      // Reset success notification flag when offline
-      hasNotifiedSuccess.current = false;
+      // Reset notification flag when offline
+      hasNotifiedRef.current = false;
       
-      // Only show error toast if not during initial silent check
-      if (!isInitialCheck.current) {
+      // Only show error toast if not a silent check
+      if (!silent) {
         toast.error('Failed to connect to backend server');
       }
     } finally {
       setIsCheckingConnection(false);
-      // After first check is done, we're no longer in initial check
-      isInitialCheck.current = false;
     }
   };
 
-  // Initial check on mount only
+  // Single check on mount only
   useEffect(() => {
-    console.log('useBackendConnection hook initialized, checking backend status...');
-    // Do the initial check
-    checkBackendConnection();
+    // Run initial check silently - no toasts
+    checkBackendConnection(true);
     
-    // Only retry if offline - with reduced frequency
-    const retryInterval = window.setInterval(() => {
-      if (backendStatus === 'offline' && !isCheckingConnection) {
-        console.log('Retrying backend connection check...');
-        checkBackendConnection();
-      }
-    }, 60000); // Retry every 60 seconds instead of 30
+    // Manual retry on offline is still available through the UI
+    // but we don't set up an automatic retry interval
     
-    return () => {
-      window.clearInterval(retryInterval);
-    };
-  }, [backendStatus, isCheckingConnection]);
+    // Optional: you could still have a very infrequent retry, like once every 2-5 minutes
+    // const retryInterval = window.setInterval(() => {
+    //   if (backendStatus === 'offline' && !isCheckingConnection) {
+    //     checkBackendConnection(true); // Silent retry
+    //   }
+    // }, 300000); // Every 5 minutes
+    
+    // return () => {
+    //   window.clearInterval(retryInterval);
+    // };
+  }, []); // Empty dependency array - only runs once on mount
 
   return {
     backendStatus,
     isCheckingConnection,
-    checkBackendConnection
+    checkBackendConnection: () => checkBackendConnection(false) // Expose non-silent version for manual retries
   };
 };
