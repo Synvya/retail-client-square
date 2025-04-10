@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { initiateSquareOAuth } from '@/services/api';
 import { useProfile } from '@/context/ProfileContext';
@@ -33,13 +33,16 @@ export const useOAuthHandler = () => {
     }
   };
 
-  const processOAuthCallback = async () => {
+  const processOAuthCallback = useCallback(async () => {
     console.log('Checking for OAuth callback in URL');
       
     const urlParams = new URLSearchParams(window.location.search);
     const hashParams = window.location.hash && window.location.hash.startsWith('#') 
       ? new URLSearchParams(window.location.hash.substring(1)) 
       : new URLSearchParams('');
+    
+    console.log('URL search params:', window.location.search);
+    console.log('URL hash params:', window.location.hash);
     
     const code = urlParams.get('code') || hashParams.get('code');
     const accessToken = urlParams.get('access_token') || hashParams.get('access_token');
@@ -69,10 +72,12 @@ export const useOAuthHandler = () => {
       console.log('Merchant ID:', merchantId);
       console.log('Profile published status:', profilePublished);
       
+      // Store tokens and profile status
       localStorage.setItem('access_token', accessToken);
       localStorage.setItem('merchant_id', merchantId);
       localStorage.setItem('profile_published', profilePublished || 'false');
       
+      // Clean URL after processing OAuth parameters
       if (window.history && window.history.replaceState) {
         const cleanUrl = window.location.href.split('?')[0].split('#')[0];
         window.history.replaceState({}, document.title, cleanUrl);
@@ -98,7 +103,7 @@ export const useOAuthHandler = () => {
     }
     
     return false;
-  };
+  }, [connectWithSquare, navigate]);
 
   return {
     isInitiatingOAuth,

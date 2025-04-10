@@ -23,6 +23,7 @@ const Landing = () => {
   useEffect(() => {
     console.log('Landing page loaded');
     console.log('Current URL:', window.location.href);
+    console.log('Is in iframe:', window.location !== window.parent.location);
     
     if (isConnected) {
       console.log('User is already connected, redirecting to profile');
@@ -30,12 +31,16 @@ const Landing = () => {
       return;
     }
     
-    if (window.location.pathname.includes('/auth/callback') || 
-        window.location.search.includes('code=') || 
-        window.location.search.includes('access_token') || 
-        window.location.hash.includes('code=') ||
-        window.location.hash.includes('access_token')) {
-      console.log('On callback route or have OAuth parameters, processing callback');
+    // Check for OAuth parameters in URL (both in query string and hash)
+    const hasOAuthParams = 
+      window.location.pathname.includes('/auth/callback') || 
+      window.location.search.includes('code=') || 
+      window.location.search.includes('access_token') || 
+      window.location.hash.includes('code=') ||
+      window.location.hash.includes('access_token');
+    
+    if (hasOAuthParams) {
+      console.log('OAuth parameters detected, processing callback');
       processOAuthCallback();
     }
   }, [isConnected, navigate, processOAuthCallback]);
@@ -68,6 +73,10 @@ const Landing = () => {
         >
           {isInitiatingOAuth ? 'Connecting...' : 'Connect with Square'}
         </Button>
+        
+        <div className="mt-4 text-sm text-gray-500">
+          Note: If connecting with Square doesn't work in preview, please open in a new tab.
+        </div>
       </div>
     </div>
   );
