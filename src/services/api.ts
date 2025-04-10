@@ -1,7 +1,7 @@
 
 import axios from 'axios';
 
-// Use a stable API URL
+// Use the correct API URL
 const API_BASE_URL = 'https://api.synvya.com';
 
 console.log('API_BASE_URL:', API_BASE_URL);
@@ -55,10 +55,10 @@ api.interceptors.response.use(
   }
 );
 
-// Simple and reliable backend connectivity check
+// Simple backend connectivity check using just one endpoint
 export const pingBackend = async () => {
   try {
-    // Try the main health endpoint
+    // Use the correct endpoint
     const response = await axios.get(`${API_BASE_URL}/health`, { 
       timeout: 5000,
       headers: {
