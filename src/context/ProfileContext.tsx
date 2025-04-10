@@ -121,6 +121,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       console.log('Received profile data:', merchantProfile);
       
       // Convert backend format to our app format
+      // Make sure to handle all possible fields correctly
       setProfile({
         name: merchantProfile.name || '',
         displayName: merchantProfile.display_name || '',
@@ -130,9 +131,9 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         bannerPicture: null,
         bannerPictureUrl: merchantProfile.banner || null,
         website: merchantProfile.website || '',
-        categories: merchantProfile.hashtags?.join(', ') || '',
+        categories: Array.isArray(merchantProfile.hashtags) ? merchantProfile.hashtags.join(', ') : '',
         isConnected: true,
-        publicKey: merchantProfile.nip05?.split('@')?.[0] || '',
+        publicKey: typeof merchantProfile.nip05 === 'string' ? merchantProfile.nip05.split('@')[0] || '' : '',
         profilePublished: localStorage.getItem('profile_published') === 'true',
       });
       

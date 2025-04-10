@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-// Set the fixed cloud API URL to use HTTP instead of HTTPS
-// This avoids SSL certificate issues when connecting to the development server
-const API_BASE_URL = 'http://54.227.98.115:8000';
+// Update the API URL to use the domain and HTTPS
+const API_BASE_URL = 'https://api.synvya.com';
 
 console.log('API_BASE_URL:', API_BASE_URL);
 
@@ -58,7 +57,7 @@ api.interceptors.response.use(
   }
 );
 
-// Square OAuth endpoint - synchronized exactly with Synvya retail-dashboard implementation
+// Update the Square OAuth endpoint to match the new URL
 export const initiateSquareOAuth = async () => {
   try {
     // Generate the callback URL using the current origin - this must exactly match
@@ -81,53 +80,25 @@ export const initiateSquareOAuth = async () => {
   }
 };
 
-// Specialized backend connectivity check using direct browser features
+// Update backend connectivity check for the new domain
 export const pingBackend = async () => {
   console.log('Checking backend connection at:', `${API_BASE_URL}/`);
   
   try {
-    // Try using a script tag to detect if the server is online
-    // This approach can bypass some CORS restrictions
-    return new Promise<boolean>((resolve) => {
-      // Set a timeout for the overall operation
-      const timeoutId = setTimeout(() => {
-        console.error('Backend connectivity check timed out');
-        cleanup();
-        resolve(false);
-      }, 5000);
-      
-      // Cleanup function to remove elements and clear timeout
-      const cleanup = () => {
-        clearTimeout(timeoutId);
-        if (img) document.body.removeChild(img);
-      };
-      
-      // Create an image element to ping the server
-      // This is a common technique to check if a server is online
-      // without triggering CORS issues
-      const img = document.createElement('img');
-      img.style.display = 'none';
-      document.body.appendChild(img);
-      
-      // Set up event handlers
-      img.onload = () => {
-        console.log('Backend connection detected via image load');
-        cleanup();
-        resolve(true);
-      };
-      
-      img.onerror = () => {
-        // Even an error means the server is reachable
-        // (error happens because it's not an image)
-        console.log('Backend connection detected via image error');
-        cleanup();
-        resolve(true);
-      };
-      
-      // Set source to trigger the request
-      // Adding a cache buster to prevent browser caching
-      img.src = `${API_BASE_URL}/favicon.ico?_=${Date.now()}`;
+    // Use a more direct method since we're using a proper domain now
+    const response = await fetch(`${API_BASE_URL}/square/health`, { 
+      method: 'GET',
+      mode: 'cors',
+      cache: 'no-cache',
     });
+    
+    if (response.ok) {
+      console.log('Backend connection successful via fetch');
+      return true;
+    } else {
+      console.log('Backend connection failed via fetch');
+      return false;
+    }
   } catch (error) {
     console.error('Backend connectivity check failed:', error);
     return false;

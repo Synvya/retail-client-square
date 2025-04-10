@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useProfile } from '@/context/ProfileContext';
 import Logo from '@/components/Logo';
 import FileUploader from '@/components/FileUploader';
+import { toast } from 'sonner';
 
 const Profile = () => {
   const { profile, updateProfile, saveProfile, isLoading } = useProfile();
@@ -20,12 +20,25 @@ const Profile = () => {
     }
   }, [profile.isConnected, navigate]);
 
+  // Add a debug effect to log profile data when it changes
+  useEffect(() => {
+    console.log('Profile data in component:', profile);
+  }, [profile]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
     try {
-      await saveProfile();
+      const success = await saveProfile();
+      if (success) {
+        toast.success('Profile updated successfully!');
+      } else {
+        toast.error('Failed to update profile.');
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast.error('An error occurred while saving your profile.');
     } finally {
       setIsSubmitting(false);
     }
