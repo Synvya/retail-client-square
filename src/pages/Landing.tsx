@@ -1,144 +1,34 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useProfile } from '@/context/ProfileContext';
-import { toast } from 'sonner';
 import Logo from '@/components/Logo';
-import { initiateSquareOAuth, pingBackend } from '@/services/api';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+import { useBackendConnection } from '@/hooks/useBackendConnection';
+import { useOAuthHandler } from '@/hooks/useOAuthHandler';
+import BackendStatusAlert from '@/components/landing/BackendStatusAlert';
+import OAuthErrorAlert from '@/components/landing/OAuthErrorAlert';
 
 const Landing = () => {
-  const { connectWithSquare, profile, isLoading } = useProfile();
   const navigate = useNavigate();
-  const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking');
-  const [isInitiatingOAuth, setIsInitiatingOAuth] = useState(false);
-  const [isCheckingConnection, setIsCheckingConnection] = useState(false);
-  const [oauthError, setOauthError] = useState<string | null>(null);
-
-  // Check backend connection on component mount, with retries
-  useEffect(() => {
-    console.log('Landing component mounted, checking backend status...');
-    checkBackendConnection();
-    
-    // Set up a retry interval if initial check fails
-    const retryInterval = setInterval(() => {
-      if (backendStatus === 'offline') {
-        console.log('Retrying backend connection check...');
-        checkBackendConnection();
-      } else {
-        clearInterval(retryInterval);
-      }
-    }, 5000); // Retry every 5 seconds
-    
-    return () => clearInterval(retryInterval);
-  }, []);
-
-  const checkBackendConnection = async () => {
-    console.log('Checking backend status...');
-    setIsCheckingConnection(true);
-    setBackendStatus('checking');
-    
-    try {
-      const isOnline = await pingBackend();
-      console.log('Backend status result:', isOnline);
-      setBackendStatus(isOnline ? 'online' : 'offline');
-      
-      if (isOnline) {
-        toast.success('Connected to backend successfully!');
-      } else {
-        toast.error('Cannot connect to backend server. Please check if the server is running.');
-      }
-    } catch (error) {
-      console.error('Error checking backend status:', error);
-      setBackendStatus('offline');
-      toast.error('Failed to connect to backend server');
-    } finally {
-      setIsCheckingConnection(false);
-    }
-  };
+  const { backendStatus, isCheckingConnection, checkBackendConnection } = useBackendConnection();
+  const { 
+    isInitiatingOAuth, 
+    oauthError, 
+    handleConnectWithSquare, 
+    processOAuthCallback,
+    isConnected
+  } = useOAuthHandler();
 
   // Handle OAuth flow and profile connection
   useEffect(() => {
     console.log('Landing page loaded');
-    console.log('Current profile state:', profile);
-    console.log('Backend status:', backendStatus);
     console.log('Current URL:', window.location.href);
     
-    if (profile.isConnected) {
+    if (isConnected) {
       console.log('User is already connected, redirecting to profile');
       navigate('/profile');
       return;
     }
-    
-    const handleOAuthCallback = async () => {
-      console.log('Checking for OAuth callback in URL');
-      
-      const urlParams = new URLSearchParams(window.location.search);
-      const hashParams = window.location.hash && window.location.hash.startsWith('#') 
-        ? new URLSearchParams(window.location.hash.substring(1)) 
-        : new URLSearchParams('');
-      
-      const code = urlParams.get('code') || hashParams.get('code');
-      const accessToken = urlParams.get('access_token') || hashParams.get('access_token');
-      const merchantId = urlParams.get('merchant_id') || hashParams.get('merchant_id');
-      const profilePublished = urlParams.get('profile_published') || hashParams.get('profile_published');
-      const error = urlParams.get('error') || hashParams.get('error');
-      
-      console.log('OAuth callback params:', { code, accessToken, merchantId, profilePublished, error });
-      
-      if (error) {
-        console.error('OAuth error returned:', error);
-        toast.error(`Square authorization failed: ${error}`);
-        setOauthError(`Square authorization failed: ${error}`);
-        return false;
-      }
-      
-      if (code && !accessToken) {
-        console.log('Received authorization code but no access token');
-        toast.error('Authorization incomplete. Please try again.');
-        setOauthError('Square authorization was not completed properly. Please try again.');
-        return false;
-      }
-      
-      if (accessToken && merchantId) {
-        console.log('OAuth callback detected, processing...');
-        console.log('Access token received:', accessToken.substring(0, 5) + '...');
-        console.log('Merchant ID:', merchantId);
-        console.log('Profile published status:', profilePublished);
-        
-        localStorage.setItem('access_token', accessToken);
-        localStorage.setItem('merchant_id', merchantId);
-        localStorage.setItem('profile_published', profilePublished || 'false');
-        
-        if (window.history && window.history.replaceState) {
-          const cleanUrl = window.location.href.split('?')[0].split('#')[0];
-          window.history.replaceState({}, document.title, cleanUrl);
-        }
-        
-        if (profilePublished === 'true') {
-          toast.success('Successfully connected with Square and published your profile!');
-        } else {
-          toast.warning('Connected with Square, but profile publishing failed. You can retry in settings.');
-        }
-        
-        const success = await connectWithSquare();
-        if (success) {
-          console.log('Successfully connected with Square, navigating to profile');
-          navigate('/profile');
-          return true;
-        } else {
-          console.error('Failed to connect with Square');
-          toast.error('Square authorization failed');
-          setOauthError('Failed to connect with Square after authorization. Please try again.');
-          return false;
-        }
-      } else {
-        console.log('No OAuth callback parameters found in URL');
-        return false;
-      }
-    };
     
     if (window.location.pathname.includes('/auth/callback') || 
         window.location.search.includes('code=') || 
@@ -146,33 +36,10 @@ const Landing = () => {
         window.location.hash.includes('code=') ||
         window.location.hash.includes('access_token')) {
       console.log('On callback route or have OAuth parameters, processing callback');
-      handleOAuthCallback();
+      processOAuthCallback();
     }
-  }, [profile.isConnected, navigate, connectWithSquare, backendStatus]);
+  }, [isConnected, navigate, processOAuthCallback]);
 
-  const handleConnectWithSquare = async () => {
-    console.log('Connect with Square button clicked');
-    setOauthError(null);
-    
-    if (backendStatus === 'offline') {
-      toast.error('Cannot connect to backend server. Please try again later.');
-      return;
-    }
-    
-    setIsInitiatingOAuth(true);
-    
-    try {
-      console.log('Initiating Square OAuth flow');
-      await initiateSquareOAuth();
-    } catch (error) {
-      console.error('Error initiating Square OAuth:', error);
-      toast.error('Failed to connect with Square. Please try again later.');
-      setOauthError('Failed to initiate Square connection. Please try again later.');
-      setIsInitiatingOAuth(false);
-    }
-  };
-
-  // Render landing page UI
   return (
     <div className="min-h-screen flex items-center justify-center bg-white p-4">
       <div className="w-full max-w-xl rounded-3xl border-2 border-synvya-dark p-8 flex flex-col items-center">
@@ -185,60 +52,21 @@ const Landing = () => {
           Powering commerce for the agentic era
         </p>
         
-        {backendStatus === 'checking' && (
-          <p className="text-yellow-600 mb-4 flex items-center">
-            <RefreshCw className="animate-spin h-4 w-4 mr-2" />
-            Checking backend connection...
-          </p>
-        )}
+        <BackendStatusAlert 
+          status={backendStatus} 
+          onRetry={checkBackendConnection}
+          isCheckingConnection={isCheckingConnection}
+        />
         
-        {backendStatus === 'offline' && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertTitle>Backend Connection Failed</AlertTitle>
-            <AlertDescription>
-              <p className="mb-2">The application cannot connect to the backend server.</p>
-              <p className="mb-2">Please ensure the backend service is running and accessible.</p>
-              
-              <Button 
-                onClick={checkBackendConnection} 
-                variant="secondary" 
-                className="w-full mt-2"
-                disabled={isCheckingConnection}
-              >
-                {isCheckingConnection ? (
-                  <><RefreshCw className="animate-spin h-4 w-4 mr-2" /> Testing Connection...</>
-                ) : (
-                  <>Retry Connection Test</>
-                )}
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        {backendStatus === 'online' && (
-          <Alert variant="default" className="mb-6 border-green-500 bg-green-50">
-            <AlertTitle className="text-green-700">Backend Connected</AlertTitle>
-            <AlertDescription className="text-green-700">
-              Successfully connected to backend server
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        {oauthError && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4 mr-2" />
-            <AlertTitle>Connection Error</AlertTitle>
-            <AlertDescription>{oauthError}</AlertDescription>
-          </Alert>
-        )}
+        <OAuthErrorAlert error={oauthError} />
         
         <Button 
-          onClick={handleConnectWithSquare}
+          onClick={() => handleConnectWithSquare(backendStatus)}
           className="rounded-full text-lg py-6 px-10 border-2 border-synvya-dark bg-white text-synvya-dark hover:bg-gray-50"
           variant="outline"
-          disabled={isLoading || isInitiatingOAuth || backendStatus !== 'online'}
+          disabled={isInitiatingOAuth || backendStatus !== 'online'}
         >
-          {isLoading || isInitiatingOAuth ? 'Connecting...' : 'Connect with Square'}
+          {isInitiatingOAuth ? 'Connecting...' : 'Connect with Square'}
         </Button>
       </div>
     </div>
