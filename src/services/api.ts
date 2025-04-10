@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 
 // Set the fixed cloud API URL to use HTTPS instead of HTTP
@@ -58,18 +59,20 @@ api.interceptors.response.use(
   }
 );
 
-// Square OAuth endpoint - synced with Synvya retail-dashboard implementation
+// Square OAuth endpoint - synchronized exactly with Synvya retail-dashboard implementation
 export const initiateSquareOAuth = async () => {
   try {
-    // Generate the callback URL using the current origin
+    // Generate the callback URL using the current origin - this must exactly match
+    // what the backend expects to prevent "invalid request received" errors
     const redirectUrl = `${window.location.origin}/auth/callback`;
     console.log(`Initiating OAuth with callback URL: ${redirectUrl}`);
     
-    // IMPORTANT: Using 'redirect_uri' as the parameter name exactly as expected by backend
+    // Using the exact parameter name expected by the backend: redirect_uri
     const oauthUrl = `${API_BASE_URL}/square/oauth?redirect_uri=${encodeURIComponent(redirectUrl)}`;
     console.log(`Redirecting to OAuth URL: ${oauthUrl}`);
     
     // Redirect the user to the Square OAuth authorization URL
+    // This will navigate away from the current page to Square's auth page
     window.location.href = oauthUrl;
     
     return true;
