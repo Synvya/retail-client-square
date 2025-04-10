@@ -1,6 +1,7 @@
+
 import axios from 'axios';
 
-// Update the API URL to use the domain and HTTPS
+// Update the API URL to match the working endpoint
 const API_BASE_URL = 'https://api.synvya.com';
 
 console.log('API_BASE_URL:', API_BASE_URL);
@@ -57,11 +58,10 @@ api.interceptors.response.use(
   }
 );
 
-// Update the Square OAuth endpoint to match the new URL
+// Update the Square OAuth endpoint with more detailed logs
 export const initiateSquareOAuth = async () => {
   try {
-    // Generate the callback URL using the current origin - this must exactly match
-    // what the backend expects to prevent "invalid request received" errors
+    // Generate the callback URL using the current origin
     const redirectUrl = `${window.location.origin}/auth/callback`;
     console.log(`Initiating OAuth with callback URL: ${redirectUrl}`);
     
@@ -70,35 +70,50 @@ export const initiateSquareOAuth = async () => {
     console.log(`Redirecting to OAuth URL: ${oauthUrl}`);
     
     // Redirect the user to the Square OAuth authorization URL
-    // This will navigate away from the current page to Square's auth page
     window.location.href = oauthUrl;
     
     return true;
   } catch (error) {
     console.error('Error initiating Square OAuth:', error);
-    throw error; // Re-throw to allow handling in the UI
+    throw error;
   }
 };
 
-// Update backend connectivity check for the new domain
+// Update backend connectivity check with better error handling
 export const pingBackend = async () => {
   console.log('Checking backend connection at:', `${API_BASE_URL}/`);
   
   try {
-    // Use a more direct method since we're using a proper domain now
-    const response = await fetch(`${API_BASE_URL}/square/health`, { 
-      method: 'GET',
-      mode: 'cors',
-      cache: 'no-cache',
-    });
+    // Try multiple endpoints to check the backend status
+    const endpoints = [
+      '/square/health',
+      '/health',
+      '/'
+    ];
     
-    if (response.ok) {
-      console.log('Backend connection successful via fetch');
-      return true;
-    } else {
-      console.log('Backend connection failed via fetch');
-      return false;
+    // Try each endpoint until one works
+    for (const endpoint of endpoints) {
+      try {
+        console.log(`Trying endpoint: ${API_BASE_URL}${endpoint}`);
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, { 
+          method: 'GET',
+          mode: 'cors',
+          cache: 'no-cache',
+        });
+        
+        if (response.ok) {
+          console.log(`Backend connection successful via fetch to ${endpoint}`);
+          return true;
+        } else {
+          console.log(`Backend connection failed via fetch to ${endpoint}: ${response.status}`);
+        }
+      } catch (endpointError) {
+        console.error(`Error trying endpoint ${endpoint}:`, endpointError);
+      }
     }
+    
+    console.log('All backend connectivity checks failed');
+    return false;
   } catch (error) {
     console.error('Backend connectivity check failed:', error);
     return false;
