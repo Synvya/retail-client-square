@@ -65,6 +65,7 @@ const Landing = () => {
       const urlParams = new URLSearchParams(window.location.search);
       const accessToken = urlParams.get('access_token');
       const merchantId = urlParams.get('merchant_id');
+      const profilePublished = urlParams.get('profile_published');
       const error = urlParams.get('error');
       
       // Handle any errors returned in the callback
@@ -79,16 +80,25 @@ const Landing = () => {
         console.log('OAuth callback detected, processing...');
         console.log('Access token:', accessToken.substring(0, 10) + '...');
         console.log('Merchant ID:', merchantId);
+        console.log('Profile published:', profilePublished);
         
-        // Store the tokens immediately to ensure they're available
+        // Store the tokens and profile status immediately to ensure they're available
         localStorage.setItem('access_token', accessToken);
         localStorage.setItem('merchant_id', merchantId);
+        localStorage.setItem('profile_published', profilePublished || 'false');
         
         // Remove query parameters from URL to prevent reprocessing
         if (window.history && window.history.replaceState) {
           // Remove the query parameters but keep the path
           const cleanUrl = window.location.href.split('?')[0];
           window.history.replaceState({}, document.title, cleanUrl);
+        }
+        
+        // Show appropriate toast based on profile_published status
+        if (profilePublished === 'true') {
+          toast.success('Successfully connected with Square and published your profile!');
+        } else {
+          toast.warning('Connected with Square, but profile publishing failed. You can retry in settings.');
         }
         
         const success = await connectWithSquare();
@@ -135,7 +145,6 @@ const Landing = () => {
       console.log(`Using callback URL: ${callbackUrl}`);
       
       await initiateSquareOAuth(callbackUrl);
-      // No need to check the return value as initiateSquareOAuth now throws errors
       // The redirect will happen automatically if successful
     } catch (error) {
       console.error('Error in handleConnectWithSquare:', error);

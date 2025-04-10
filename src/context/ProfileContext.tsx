@@ -30,6 +30,7 @@ interface Profile {
   categories: string;
   isConnected: boolean;
   publicKey: string;
+  profilePublished: boolean;
 }
 
 interface ProfileContextType {
@@ -39,6 +40,7 @@ interface ProfileContextType {
   saveProfile: () => Promise<boolean>;
   resetProfile: () => void;
   isLoading: boolean;
+  republishProfile: () => Promise<boolean>;
 }
 
 const defaultProfile: Profile = {
@@ -53,6 +55,7 @@ const defaultProfile: Profile = {
   categories: '',
   isConnected: false,
   publicKey: '',
+  profilePublished: false,
 };
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -66,10 +69,12 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     console.log('ProfileContext initialized');
     const token = localStorage.getItem('access_token');
     const merchantId = localStorage.getItem('merchant_id');
+    const profilePublished = localStorage.getItem('profile_published') === 'true';
     
     console.log('Checking for stored credentials');
     console.log('Access token exists:', !!token);
     console.log('Merchant ID exists:', !!merchantId);
+    console.log('Profile published:', profilePublished);
     
     if (token && merchantId) {
       console.log('Credentials found, fetching profile data');
@@ -78,12 +83,17 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         .then(success => {
           if (success) {
             console.log('Successfully fetched profile data');
-            setProfile(prev => ({ ...prev, isConnected: true }));
+            setProfile(prev => ({ 
+              ...prev, 
+              isConnected: true,
+              profilePublished: profilePublished
+            }));
           } else {
             console.error('Failed to fetch profile data');
             // On failure, clear tokens
             localStorage.removeItem('access_token');
             localStorage.removeItem('merchant_id');
+            localStorage.removeItem('profile_published');
           }
         })
         .catch(err => {
@@ -93,6 +103,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
             console.log('Unauthorized access, clearing credentials');
             localStorage.removeItem('access_token');
             localStorage.removeItem('merchant_id');
+            localStorage.removeItem('profile_published');
           }
           toast.error('Failed to load profile data');
         })
@@ -122,6 +133,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         categories: merchantProfile.hashtags?.join(', ') || '',
         isConnected: true,
         publicKey: merchantProfile.nip05?.split('@')?.[0] || '',
+        profilePublished: localStorage.getItem('profile_published') === 'true',
       });
       
       return true;
@@ -139,7 +151,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     // Just verify if tokens are stored in localStorage
     const accessToken = localStorage.getItem('access_token');
     const merchantId = localStorage.getItem('merchant_id');
-    const profilePublished = localStorage.getItem('profile_published');
+    const profilePublished = localStorage.getItem('profile_published') === 'true';
 
     console.log('Checking stored credentials:');
     console.log('- access_token exists:', !!accessToken);
@@ -149,15 +161,12 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     if (accessToken && merchantId) {
       console.log('Valid credentials found');
       
-      // Show appropriate message based on profile_published
-      if (profilePublished === 'true') {
-        toast.success('Successfully connected with Square!');
-      } else {
-        toast.warning('Connected with Square, but profile publishing failed. You can retry in settings.');
-      }
-      
       // Update profile state
-      setProfile(prev => ({ ...prev, isConnected: true }));
+      setProfile(prev => ({ 
+        ...prev, 
+        isConnected: true,
+        profilePublished: profilePublished
+      }));
       
       return true;
     }
@@ -225,11 +234,56 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       const result = await updateMerchantProfile(merchantProfile);
       console.log('Profile update result:', result);
       
-      toast.success('Profile updated successfully!');
+      // Update profile published status based on the result
+      if (result && result.success) {
+        localStorage.setItem('profile_published', 'true');
+        setProfile(prev => ({ ...prev, profilePublished: true }));
+        toast.success('Profile updated and published successfully!');
+      } else {
+        localStorage.setItem('profile_published', 'false');
+        setProfile(prev => ({ ...prev, profilePublished: false }));
+        toast.error('Profile updated but publishing failed. You can retry publishing later.');
+      }
+      
       return true;
     } catch (error) {
       console.error('Error saving profile:', error);
       toast.error('Failed to update profile. Please try again.');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Republish profile to Nostr
+  const republishProfile = async (): Promise<boolean> => {
+    try {
+      console.log('Republishing profile to Nostr');
+      setIsLoading(true);
+      
+      // Use the same API endpoint as saveProfile
+      const merchantProfile: Partial<MerchantProfile> = {
+        name: profile.name,
+        display_name: profile.displayName,
+        about: profile.about,
+        website: profile.website,
+        hashtags: profile.categories.split(',').map(tag => tag.trim()).filter(Boolean),
+      };
+      
+      const result = await updateMerchantProfile(merchantProfile);
+      
+      if (result && result.success) {
+        localStorage.setItem('profile_published', 'true');
+        setProfile(prev => ({ ...prev, profilePublished: true }));
+        toast.success('Profile successfully published to Nostr!');
+        return true;
+      } else {
+        toast.error('Failed to publish profile to Nostr. Please try again.');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error republishing profile:', error);
+      toast.error('Failed to publish profile. Please try again.');
       return false;
     } finally {
       setIsLoading(false);
@@ -258,6 +312,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         saveProfile,
         resetProfile,
         isLoading,
+        republishProfile,
       }}
     >
       {children}

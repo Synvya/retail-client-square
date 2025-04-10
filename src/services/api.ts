@@ -59,31 +59,12 @@ api.interceptors.response.use(
   }
 );
 
-// Square OAuth endpoints - improved with better error handling and validation
+// Square OAuth endpoints - updated to match backend documentation
 export const initiateSquareOAuth = async (redirectUri?: string) => {
   try {
     // Use the explicitly provided callback URL or build one from the current origin
     const callbackUrl = redirectUri || `${window.location.origin}/auth/callback`;
     console.log(`Initiating OAuth with callback URL: ${callbackUrl}`);
-    
-    // Validate the callback URL format
-    if (!callbackUrl.startsWith('http')) {
-      console.error('Invalid callback URL format:', callbackUrl);
-      throw new Error('Invalid callback URL format. Must start with http:// or https://');
-    }
-    
-    // First, check that the OAuth endpoint is available
-    try {
-      await fetch(`${API_BASE_URL}/square/ping`, { 
-        method: 'GET',
-        mode: 'cors',
-        credentials: 'include'
-      });
-      console.log('Square API endpoint is available');
-    } catch (pingError) {
-      console.warn('Square API ping failed, continuing anyway:', pingError);
-      // Continue anyway, as the redirect might still work
-    }
     
     // Build the OAuth URL with proper encoding
     const oauthUrl = `${API_BASE_URL}/square/oauth?redirect_uri=${encodeURIComponent(callbackUrl)}`;
