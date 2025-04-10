@@ -32,16 +32,13 @@ export const useBackendConnection = () => {
     }
   };
 
-  // Initial check with auto-retry
+  // Initial check
   useEffect(() => {
     console.log('useBackendConnection hook initialized, checking backend status...');
-    let retryInterval: number;
-    
-    // Initial check
     checkBackendConnection();
     
-    // Set up a retry interval if initial check fails
-    retryInterval = window.setInterval(() => {
+    // Set up a retry interval if offline
+    const retryInterval = window.setInterval(() => {
       if (backendStatus === 'offline') {
         console.log('Retrying backend connection check...');
         checkBackendConnection();
@@ -49,11 +46,9 @@ export const useBackendConnection = () => {
     }, 5000); // Retry every 5 seconds
     
     return () => {
-      if (retryInterval) {
-        window.clearInterval(retryInterval);
-      }
+      window.clearInterval(retryInterval);
     };
-  }, [backendStatus]); // Add backendStatus as dependency to properly handle retries
+  }, [backendStatus]);
 
   return {
     backendStatus,

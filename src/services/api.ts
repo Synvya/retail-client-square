@@ -1,6 +1,7 @@
+
 import axios from 'axios';
 
-// Update the API URL to match the working endpoint
+// Use a stable API URL
 const API_BASE_URL = 'https://api.synvya.com';
 
 console.log('API_BASE_URL:', API_BASE_URL);
@@ -12,15 +13,15 @@ const api = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  timeout: 15000, // 15 second timeout
-  withCredentials: true, // Enable credentials since server allows_credentials=True
+  timeout: 10000, // 10 second timeout
+  withCredentials: true, // Enable credentials
 });
 
 // Add request interceptor to attach auth token
 api.interceptors.request.use(
   (config) => {
     console.log(`Making ${config.method?.toUpperCase()} request to: ${config.baseURL}${config.url}`);
-    // Get token from localStorage - this ensures it works when opening in new tab
+    // Get token from localStorage
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -48,75 +49,25 @@ api.interceptors.response.use(
       console.error('Error status:', error.response.status);
       console.error('Error data:', error.response.data);
     } else if (error.request) {
-      console.error('No response received. Request details:', {
-        url: error.config?.url,
-        method: error.config?.method,
-        baseURL: error.config?.baseURL,
-        timeout: error.config?.timeout,
-        headers: error.config?.headers
-      });
+      console.error('No response received');
     }
     return Promise.reject(error);
   }
 );
 
-// Update the pingBackend function to be more robust
+// Simple and reliable backend connectivity check
 export const pingBackend = async () => {
-  console.log('Checking backend connection at:', `${API_BASE_URL}/`);
-  
   try {
-    // Try multiple endpoints to check the backend status
-    const endpoints = [
-      '/health',
-      '/square/health',
-      '/'
-    ];
-    
-    // Try each endpoint until one works
-    for (const endpoint of endpoints) {
-      try {
-        console.log(`Trying endpoint: ${API_BASE_URL}${endpoint}`);
-        
-        // Use axios for consistent handling
-        const response = await axios.get(`${API_BASE_URL}${endpoint}`, { 
-          timeout: 10000,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          }
-        });
-        
-        if (response.status >= 200 && response.status < 300) {
-          console.log(`Backend connection successful via ${endpoint}`);
-          return true;
-        }
-      } catch (endpointError) {
-        console.error(`Error trying endpoint ${endpoint}:`, endpointError);
+    // Try the main health endpoint
+    const response = await axios.get(`${API_BASE_URL}/health`, { 
+      timeout: 5000,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
       }
-    }
+    });
     
-    // Try a more direct approach as fallback
-    try {
-      const response = await fetch(`${API_BASE_URL}/health`, { 
-        method: 'GET',
-        mode: 'cors',
-        cache: 'no-cache',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        }
-      });
-      
-      if (response.ok) {
-        console.log('Backend connection successful via fetch');
-        return true;
-      }
-    } catch (fetchError) {
-      console.error('Fetch fallback failed:', fetchError);
-    }
-    
-    console.log('All backend connectivity checks failed');
-    return false;
+    return response.status >= 200 && response.status < 300;
   } catch (error) {
     console.error('Backend connectivity check failed:', error);
     return false;
