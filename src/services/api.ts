@@ -1,10 +1,8 @@
 
 import axios from 'axios';
 
-// Get the API URL from a global variable if available, or use the default
-// To override this in development, you can set window.API_BASE_URL before the app loads
-// For production, deploy the backend to a public URL
-const API_BASE_URL = (window as any).API_BASE_URL || 'http://localhost:8000';
+// Set the fixed cloud API URL
+const API_BASE_URL = 'http://54.227.98.115:8000';
 
 console.log('API_BASE_URL:', API_BASE_URL);
 
@@ -14,8 +12,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  // Add longer timeout for potentially slow ngrok connections
-  timeout: 15000, // Increased timeout for slower connections
+  timeout: 10000, // 10 second timeout
 });
 
 // Add request interceptor to attach auth token
@@ -53,21 +50,14 @@ api.interceptors.response.use(
   }
 );
 
-// Square OAuth endpoints - Completely rewritten to improve ngrok compatibility
+// Square OAuth endpoints 
 export const initiateSquareOAuth = async (redirectUri?: string) => {
   try {
     // Use the explicitly provided callback URL or build one from the current origin
     const callbackUrl = redirectUri || `${window.location.origin}/auth/callback`;
     console.log(`Initiating OAuth with callback URL: ${callbackUrl}`);
     
-    // Test backend connection before initiating OAuth
-    const isBackendReachable = await pingBackend();
-    if (!isBackendReachable) {
-      console.error('Backend server is not reachable. Cannot initiate OAuth flow.');
-      return false;
-    }
-    
-    // Instead of directly redirecting, construct the OAuth URL with proper encoding
+    // Construct the OAuth URL
     const oauthUrl = `${API_BASE_URL}/square/oauth?redirect_uri=${encodeURIComponent(callbackUrl)}`;
     console.log(`Redirecting to OAuth URL: ${oauthUrl}`);
     
@@ -82,76 +72,18 @@ export const initiateSquareOAuth = async (redirectUri?: string) => {
   }
 };
 
-// Completely rewritten pingBackend function with multiple fallback methods
+// Simple backend connectivity check
 export const pingBackend = async () => {
   console.log('Checking backend connection at:', `${API_BASE_URL}/`);
   
-  // Try multiple methods to connect to the backend
-  const methods = [
-    // Method 1: Use fetch with CORS mode
-    async () => {
-      try {
-        console.log('Trying fetch with CORS mode...');
-        const response = await fetch(`${API_BASE_URL}/`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-          mode: 'cors',
-          credentials: 'include',
-          signal: AbortSignal.timeout(5000),
-        });
-        
-        console.log('Fetch response status:', response.status);
-        return response.ok;
-      } catch (error) {
-        console.log('Fetch method failed:', error);
-        return false;
-      }
-    },
-    
-    // Method 2: Use axios with our configured instance
-    async () => {
-      try {
-        console.log('Trying axios...');
-        const response = await api.get('/', { timeout: 5000 });
-        console.log('Axios response status:', response.status);
-        return response.status >= 200 && response.status < 300;
-      } catch (error) {
-        console.log('Axios method failed:', error);
-        return false;
-      }
-    },
-    
-    // Method 3: Try a HEAD request which might be lighter
-    async () => {
-      try {
-        console.log('Trying HEAD request...');
-        const response = await fetch(`${API_BASE_URL}/`, {
-          method: 'HEAD',
-          mode: 'no-cors', // Try with no-cors as a last resort
-          signal: AbortSignal.timeout(5000),
-        });
-        
-        console.log('HEAD response type:', response.type);
-        // With no-cors, we can't read the status so we check if we got any response
-        return response.type === 'opaque' || response.ok;
-      } catch (error) {
-        console.log('HEAD method failed:', error);
-        return false;
-      }
-    }
-  ];
-  
-  // Try each method until one succeeds
-  for (const method of methods) {
-    const result = await method();
-    if (result) {
-      console.log('Backend is online');
-      return true;
-    }
+  try {
+    const response = await api.get('/', { timeout: 5000 });
+    console.log('Backend connection successful:', response.status);
+    return response.status >= 200 && response.status < 300;
+  } catch (error) {
+    console.error('Backend connection failed:', error);
+    return false;
   }
-  
-  console.error('All backend connection methods failed');
-  return false;
 };
 
 // Merchant profile APIs
