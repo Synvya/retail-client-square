@@ -11,8 +11,11 @@ const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
   timeout: 10000, // 10 second timeout
+  // Enable CORS credentials if the API requires them
+  withCredentials: false,
 });
 
 // Add request interceptor to attach auth token
@@ -44,7 +47,13 @@ api.interceptors.response.use(
       console.error('Error status:', error.response.status);
       console.error('Error data:', error.response.data);
     } else if (error.request) {
-      console.error('No response received. Request:', error.request);
+      console.error('No response received. Request details:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        baseURL: error.config?.baseURL,
+        timeout: error.config?.timeout,
+        headers: error.config?.headers
+      });
     }
     return Promise.reject(error);
   }
@@ -77,11 +86,25 @@ export const pingBackend = async () => {
   console.log('Checking backend connection at:', `${API_BASE_URL}/`);
   
   try {
-    const response = await api.get('/', { timeout: 5000 });
+    const response = await api.get('/', { 
+      timeout: 5000,
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
     console.log('Backend connection successful:', response.status);
     return response.status >= 200 && response.status < 300;
   } catch (error) {
     console.error('Backend connection failed:', error);
+    // Log more detailed diagnostic information
+    if (error.code === 'ERR_NETWORK') {
+      console.error('Network error details:', {
+        message: 'This typically indicates a CORS issue, server unreachable, or blocked by browser security',
+        browserInfo: navigator.userAgent,
+        errorCode: error.code
+      });
+    }
     return false;
   }
 };
