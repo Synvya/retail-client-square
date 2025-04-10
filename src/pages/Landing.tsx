@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,6 @@ const Landing = () => {
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
   const [oauthError, setOauthError] = useState<string | null>(null);
 
-  // Check backend status on mount
   useEffect(() => {
     checkBackendConnection();
   }, []);
@@ -46,33 +44,45 @@ const Landing = () => {
     }
   };
 
-  // Check if user is already authenticated and handle OAuth callback
   useEffect(() => {
     console.log('Landing page loaded');
     console.log('Current profile state:', profile);
     console.log('Backend status:', backendStatus);
+    console.log('Current URL:', window.location.href);
     
-    // If already connected, navigate to profile
     if (profile.isConnected) {
       console.log('User is already connected, redirecting to profile');
       navigate('/profile');
       return;
     }
     
-    // Handle OAuth callback if present in URL
     const handleOAuthCallback = async () => {
       console.log('Checking for OAuth callback in URL');
-      const urlParams = new URLSearchParams(window.location.search);
-      const accessToken = urlParams.get('access_token');
-      const merchantId = urlParams.get('merchant_id');
-      const profilePublished = urlParams.get('profile_published');
-      const error = urlParams.get('error');
       
-      // Handle any errors returned in the callback
+      const urlParams = new URLSearchParams(window.location.search);
+      const hashParams = window.location.hash && window.location.hash.startsWith('#') 
+        ? new URLSearchParams(window.location.hash.substring(1)) 
+        : new URLSearchParams('');
+      
+      const code = urlParams.get('code') || hashParams.get('code');
+      const accessToken = urlParams.get('access_token') || hashParams.get('access_token');
+      const merchantId = urlParams.get('merchant_id') || hashParams.get('merchant_id');
+      const profilePublished = urlParams.get('profile_published') || hashParams.get('profile_published');
+      const error = urlParams.get('error') || hashParams.get('error');
+      
+      console.log('OAuth callback params:', { code, accessToken, merchantId, profilePublished, error });
+      
       if (error) {
         console.error('OAuth error returned:', error);
         toast.error(`Square authorization failed: ${error}`);
         setOauthError(`Square authorization failed: ${error}`);
+        return false;
+      }
+      
+      if (code && !accessToken) {
+        console.log('Received authorization code but no access token');
+        toast.error('Authorization incomplete. Please try again.');
+        setOauthError('Square authorization was not completed properly. Please try again.');
         return false;
       }
       
@@ -82,18 +92,15 @@ const Landing = () => {
         console.log('Merchant ID:', merchantId);
         console.log('Profile published status:', profilePublished);
         
-        // Store the tokens and profile status
         localStorage.setItem('access_token', accessToken);
         localStorage.setItem('merchant_id', merchantId);
         localStorage.setItem('profile_published', profilePublished || 'false');
         
-        // Remove query parameters from URL to prevent reprocessing
         if (window.history && window.history.replaceState) {
-          const cleanUrl = window.location.href.split('?')[0];
+          const cleanUrl = window.location.href.split('?')[0].split('#')[0];
           window.history.replaceState({}, document.title, cleanUrl);
         }
         
-        // Show appropriate toast based on profile_published status
         if (profilePublished === 'true') {
           toast.success('Successfully connected with Square and published your profile!');
         } else {
@@ -117,9 +124,12 @@ const Landing = () => {
       }
     };
     
-    // Only handle OAuth callback if we're on the callback route or have query parameters
-    if (window.location.pathname.includes('/auth/callback') || window.location.search.includes('access_token')) {
-      console.log('On callback route, processing OAuth parameters');
+    if (window.location.pathname.includes('/auth/callback') || 
+        window.location.search.includes('code=') || 
+        window.location.search.includes('access_token') || 
+        window.location.hash.includes('code=') ||
+        window.location.hash.includes('access_token')) {
+      console.log('On callback route or have OAuth parameters, processing callback');
       handleOAuthCallback();
     }
   }, [profile.isConnected, navigate, connectWithSquare, backendStatus]);
@@ -138,7 +148,6 @@ const Landing = () => {
     try {
       console.log('Initiating Square OAuth flow');
       await initiateSquareOAuth();
-      // The redirect will happen automatically from the api.ts function
     } catch (error) {
       console.error('Error initiating Square OAuth:', error);
       toast.error('Failed to connect with Square. Please try again later.');
