@@ -1,4 +1,3 @@
-
 export interface MerchantProfile {
   name: string;
   display_name: string;
@@ -11,6 +10,7 @@ export interface MerchantProfile {
   namespace: string;
   nip05: string;
   locations: string[];
+  public_key: string;
 }
 
 export interface Profile {

@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 // Use the correct API URL
@@ -59,7 +58,7 @@ api.interceptors.response.use(
 export const pingBackend = async () => {
   try {
     // Only check the root endpoint with minimal headers
-    const response = await api.get('/', { 
+    const response = await api.get('/', {
       timeout: 5000,
       // Prevent caching of status checks
       headers: {
@@ -79,18 +78,18 @@ export const initiateSquareOAuth = async () => {
     // Get the current host from the URL
     const currentHost = window.location.host;
     const protocol = window.location.protocol;
-    
+
     // Check if we're in the Lovable preview iframe
-    const isLovablePreview = currentHost.includes('lovableproject.com') && 
-                           window.location !== window.parent.location;
-    
+    const isLovablePreview = currentHost.includes('lovableproject.com') &&
+      window.location !== window.parent.location;
+
     console.log('OAuth initialization details:', {
       currentHost,
       protocol,
       isInIframe: window.location !== window.parent.location,
       isLovablePreview
     });
-    
+
     // Generate the redirect URL based on environment
     let redirectUrl;
     if (isLovablePreview) {
@@ -102,14 +101,14 @@ export const initiateSquareOAuth = async () => {
       redirectUrl = `${window.location.origin}/auth/callback`;
       console.log('Using standard redirect URL:', redirectUrl);
     }
-    
+
     // Using the exact parameter name expected by the backend: redirect_uri
     const oauthUrl = `${API_BASE_URL}/square/oauth?redirect_uri=${encodeURIComponent(redirectUrl)}`;
     console.log(`Redirecting to OAuth URL: ${oauthUrl}`);
-    
+
     // Open in current window - this works better for OAuth flows
     window.location.href = oauthUrl;
-    
+
     return true;
   } catch (error) {
     console.error('Error initiating Square OAuth:', error);
@@ -123,6 +122,11 @@ export const getMerchantProfile = async () => {
     console.log('Fetching merchant profile from:', `${API_BASE_URL}/square/profile`);
     const response = await api.get('/square/profile');
     console.log('Profile response:', response.data);
+
+    if (response.data && !response.data.public_key) {
+      console.warn('Warning: The merchant profile does not contain a public_key field:', response.data);
+    }
+
     return response.data;
   } catch (error) {
     console.error('Error fetching merchant profile:', error);
