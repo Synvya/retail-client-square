@@ -1,9 +1,8 @@
-
 import axios from 'axios';
 
-// Set the fixed cloud API URL to use HTTPS instead of HTTP
-// This is important for security and to avoid mixed content issues
-const API_BASE_URL = 'https://54.227.98.115:8000';
+// Set the fixed cloud API URL to use HTTP instead of HTTPS
+// This avoids SSL certificate issues when connecting to the development server
+const API_BASE_URL = 'http://54.227.98.115:8000';
 
 console.log('API_BASE_URL:', API_BASE_URL);
 
