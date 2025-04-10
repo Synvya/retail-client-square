@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Set the fixed cloud API URL
-const API_BASE_URL = 'http://54.227.98.115:8000';
+const API_BASE_URL = 'https://54.227.98.115:8000';
 
 console.log('API_BASE_URL:', API_BASE_URL);
 
@@ -81,7 +81,26 @@ export const pingBackend = async () => {
     return response.status >= 200 && response.status < 300;
   } catch (error) {
     console.error('Backend connection failed:', error);
-    return false;
+    // Try HTTP fallback if HTTPS fails
+    try {
+      console.log('Attempting HTTP fallback...');
+      const httpResponse = await axios.get(`http://54.227.98.115:8000/`, { timeout: 5000 });
+      console.log('HTTP fallback successful:', httpResponse.status);
+      
+      // If HTTP works, update the base URL and recreate the axios instance
+      const newBaseUrl = 'http://54.227.98.115:8000';
+      console.log('Switching to HTTP:', newBaseUrl);
+      
+      // This is just for the current session - would need a more permanent solution in production
+      Object.defineProperty(api, 'defaults', {
+        value: { ...api.defaults, baseURL: newBaseUrl }
+      });
+      
+      return httpResponse.status >= 200 && httpResponse.status < 300;
+    } catch (httpError) {
+      console.error('HTTP fallback failed:', httpError);
+      return false;
+    }
   }
 };
 
