@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -16,8 +17,22 @@ const Landing = () => {
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
   const [oauthError, setOauthError] = useState<string | null>(null);
 
+  // Check backend connection on component mount, with retries
   useEffect(() => {
+    console.log('Landing component mounted, checking backend status...');
     checkBackendConnection();
+    
+    // Set up a retry interval if initial check fails
+    const retryInterval = setInterval(() => {
+      if (backendStatus === 'offline') {
+        console.log('Retrying backend connection check...');
+        checkBackendConnection();
+      } else {
+        clearInterval(retryInterval);
+      }
+    }, 5000); // Retry every 5 seconds
+    
+    return () => clearInterval(retryInterval);
   }, []);
 
   const checkBackendConnection = async () => {
@@ -44,6 +59,7 @@ const Landing = () => {
     }
   };
 
+  // Handle OAuth flow and profile connection
   useEffect(() => {
     console.log('Landing page loaded');
     console.log('Current profile state:', profile);
@@ -156,6 +172,7 @@ const Landing = () => {
     }
   };
 
+  // Render landing page UI
   return (
     <div className="min-h-screen flex items-center justify-center bg-white p-4">
       <div className="w-full max-w-xl rounded-3xl border-2 border-synvya-dark p-8 flex flex-col items-center">

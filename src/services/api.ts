@@ -21,10 +21,13 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     console.log(`Making ${config.method?.toUpperCase()} request to: ${config.baseURL}${config.url}`);
+    // Get token from localStorage - this ensures it works when opening in new tab
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
       console.log('Auth token attached to request');
+    } else {
+      console.log('No auth token available in localStorage');
     }
     return config;
   },
@@ -99,6 +102,7 @@ export const pingBackend = async () => {
           method: 'GET',
           mode: 'cors',
           cache: 'no-cache',
+          credentials: 'include', // Include credentials for CORS requests
         });
         
         if (response.ok) {
