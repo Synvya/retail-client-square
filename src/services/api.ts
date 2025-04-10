@@ -66,7 +66,8 @@ export const initiateSquareOAuth = async (redirectUri?: string) => {
     const callbackUrl = redirectUri || `${window.location.origin}/auth/callback`;
     console.log(`Initiating OAuth with callback URL: ${callbackUrl}`);
     
-    // Construct the OAuth URL
+    // Instead of using the API instance, construct a direct URL for redirection
+    // This avoids CORS issues since it's a direct browser navigation, not an AJAX request
     const oauthUrl = `${API_BASE_URL}/square/oauth?redirect_uri=${encodeURIComponent(callbackUrl)}`;
     console.log(`Redirecting to OAuth URL: ${oauthUrl}`);
     
@@ -86,6 +87,24 @@ export const pingBackend = async () => {
   console.log('Checking backend connection at:', `${API_BASE_URL}/`);
   
   try {
+    // Try a simple fetch request first to avoid CORS preflight
+    console.log('Attempting fetch request...');
+    try {
+      const fetchResponse = await fetch(`${API_BASE_URL}/`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        },
+        mode: 'cors'
+      });
+      console.log('Fetch response:', fetchResponse.status);
+      return fetchResponse.ok;
+    } catch (fetchError) {
+      console.log('Fetch attempt failed, falling back to axios:', fetchError);
+      // Fall back to axios if fetch fails
+    }
+    
+    // Axios request as fallback
     const response = await api.get('/', { 
       timeout: 5000,
       headers: {
