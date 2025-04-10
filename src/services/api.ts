@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 // Update the API URL to match the working endpoint
@@ -13,7 +12,7 @@ const api = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  timeout: 10000, // 10 second timeout
+  timeout: 15000, // 15 second timeout
   withCredentials: true, // Enable credentials since server allows_credentials=True
 });
 
@@ -61,6 +60,69 @@ api.interceptors.response.use(
   }
 );
 
+// Update the pingBackend function to be more robust
+export const pingBackend = async () => {
+  console.log('Checking backend connection at:', `${API_BASE_URL}/`);
+  
+  try {
+    // Try multiple endpoints to check the backend status
+    const endpoints = [
+      '/health',
+      '/square/health',
+      '/'
+    ];
+    
+    // Try each endpoint until one works
+    for (const endpoint of endpoints) {
+      try {
+        console.log(`Trying endpoint: ${API_BASE_URL}${endpoint}`);
+        
+        // Use axios for consistent handling
+        const response = await axios.get(`${API_BASE_URL}${endpoint}`, { 
+          timeout: 10000,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          }
+        });
+        
+        if (response.status >= 200 && response.status < 300) {
+          console.log(`Backend connection successful via ${endpoint}`);
+          return true;
+        }
+      } catch (endpointError) {
+        console.error(`Error trying endpoint ${endpoint}:`, endpointError);
+      }
+    }
+    
+    // Try a more direct approach as fallback
+    try {
+      const response = await fetch(`${API_BASE_URL}/health`, { 
+        method: 'GET',
+        mode: 'cors',
+        cache: 'no-cache',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        }
+      });
+      
+      if (response.ok) {
+        console.log('Backend connection successful via fetch');
+        return true;
+      }
+    } catch (fetchError) {
+      console.error('Fetch fallback failed:', fetchError);
+    }
+    
+    console.log('All backend connectivity checks failed');
+    return false;
+  } catch (error) {
+    console.error('Backend connectivity check failed:', error);
+    return false;
+  }
+};
+
 // Update the Square OAuth endpoint with improved redirect handling
 export const initiateSquareOAuth = async () => {
   try {
@@ -102,48 +164,6 @@ export const initiateSquareOAuth = async () => {
   } catch (error) {
     console.error('Error initiating Square OAuth:', error);
     throw error;
-  }
-};
-
-// Update backend connectivity check with better error handling
-export const pingBackend = async () => {
-  console.log('Checking backend connection at:', `${API_BASE_URL}/`);
-  
-  try {
-    // Try multiple endpoints to check the backend status
-    const endpoints = [
-      '/square/health',
-      '/health',
-      '/'
-    ];
-    
-    // Try each endpoint until one works
-    for (const endpoint of endpoints) {
-      try {
-        console.log(`Trying endpoint: ${API_BASE_URL}${endpoint}`);
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, { 
-          method: 'GET',
-          mode: 'cors',
-          cache: 'no-cache',
-          credentials: 'include', // Include credentials for CORS requests
-        });
-        
-        if (response.ok) {
-          console.log(`Backend connection successful via fetch to ${endpoint}`);
-          return true;
-        } else {
-          console.log(`Backend connection failed via fetch to ${endpoint}: ${response.status}`);
-        }
-      } catch (endpointError) {
-        console.error(`Error trying endpoint ${endpoint}:`, endpointError);
-      }
-    }
-    
-    console.log('All backend connectivity checks failed');
-    return false;
-  } catch (error) {
-    console.error('Backend connectivity check failed:', error);
-    return false;
   }
 };
 

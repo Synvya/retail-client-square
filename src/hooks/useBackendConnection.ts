@@ -20,6 +20,7 @@ export const useBackendConnection = () => {
       if (isOnline) {
         toast.success('Connected to backend successfully!');
       } else {
+        console.error('Backend connection failed');
         toast.error('Cannot connect to backend server. Please check if the server is running.');
       }
     } catch (error) {
@@ -34,20 +35,25 @@ export const useBackendConnection = () => {
   // Initial check with auto-retry
   useEffect(() => {
     console.log('useBackendConnection hook initialized, checking backend status...');
+    let retryInterval: number;
+    
+    // Initial check
     checkBackendConnection();
     
     // Set up a retry interval if initial check fails
-    const retryInterval = setInterval(() => {
+    retryInterval = window.setInterval(() => {
       if (backendStatus === 'offline') {
         console.log('Retrying backend connection check...');
         checkBackendConnection();
-      } else {
-        clearInterval(retryInterval);
       }
     }, 5000); // Retry every 5 seconds
     
-    return () => clearInterval(retryInterval);
-  }, []);  // Empty dependency array means this effect runs once on mount
+    return () => {
+      if (retryInterval) {
+        window.clearInterval(retryInterval);
+      }
+    };
+  }, [backendStatus]); // Add backendStatus as dependency to properly handle retries
 
   return {
     backendStatus,
