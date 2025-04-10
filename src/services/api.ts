@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 
 // Use the correct API URL
@@ -57,8 +58,14 @@ api.interceptors.response.use(
 // Simple backend connectivity check using only the root endpoint
 export const pingBackend = async () => {
   try {
-    // Only check the root endpoint, nothing else
-    const response = await api.get('/', { timeout: 5000 });
+    // Only check the root endpoint with minimal headers
+    const response = await api.get('/', { 
+      timeout: 5000,
+      // Prevent caching of status checks
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    });
     return response.status >= 200 && response.status < 300;
   } catch (error) {
     console.error('Backend connectivity check failed:', error);
