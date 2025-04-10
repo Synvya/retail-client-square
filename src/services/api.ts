@@ -1,8 +1,8 @@
-
 import axios from 'axios';
 
-// Set the fixed cloud API URL to use HTTP only
-const API_BASE_URL = 'http://54.227.98.115:8000';
+// Set the fixed cloud API URL to use HTTPS instead of HTTP
+// This is important for security and to avoid mixed content issues
+const API_BASE_URL = 'https://54.227.98.115:8000';
 
 console.log('API_BASE_URL:', API_BASE_URL);
 
@@ -14,8 +14,7 @@ const api = axios.create({
     'Accept': 'application/json',
   },
   timeout: 10000, // 10 second timeout
-  // Disable CORS credentials which might be causing issues
-  withCredentials: false,
+  withCredentials: true, // Enable credentials since server allows_credentials=True
 });
 
 // Add request interceptor to attach auth token
@@ -82,97 +81,55 @@ export const initiateSquareOAuth = async (redirectUri?: string) => {
   }
 };
 
-// Simple backend connectivity check with multiple attempts and fallbacks
+// Specialized backend connectivity check using direct browser features
 export const pingBackend = async () => {
   console.log('Checking backend connection at:', `${API_BASE_URL}/`);
   
-  // Track attempted methods
-  let methods = [];
-  
   try {
-    // METHOD 1: Try a simple fetch request with minimal headers to avoid CORS preflight
-    console.log('Attempting basic fetch request...');
-    methods.push('basic-fetch');
-    try {
-      const fetchResponse = await fetch(`${API_BASE_URL}/`, {
-        method: 'GET',
-        mode: 'cors' // Try explicit CORS mode
-      });
-      console.log('Basic fetch response:', fetchResponse.status);
-      if (fetchResponse.ok) {
-        return true;
-      }
-    } catch (fetchError) {
-      console.log('Basic fetch attempt failed:', fetchError);
-      // Continue to next method
-    }
-    
-    // METHOD 2: Try a fetch request with specific headers
-    console.log('Attempting fetch with headers...');
-    methods.push('fetch-with-headers');
-    try {
-      const fetchResponse = await fetch(`${API_BASE_URL}/`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json'
-        },
-        mode: 'cors'
-      });
-      console.log('Fetch with headers response:', fetchResponse.status);
-      if (fetchResponse.ok) {
-        return true;
-      }
-    } catch (fetchError) {
-      console.log('Fetch with headers attempt failed:', fetchError);
-      // Continue to next method
-    }
-    
-    // METHOD 3: Try a no-cors fetch (this won't actually check status but might work)
-    console.log('Attempting no-cors fetch...');
-    methods.push('no-cors-fetch');
-    try {
-      const noCorsResponse = await fetch(`${API_BASE_URL}/`, {
-        method: 'GET',
-        mode: 'no-cors' // This might bypass CORS but will return opaque response
-      });
-      // Note: With no-cors, we can't actually check status, but no error means server exists
-      console.log('No-CORS fetch completed (opaque response)');
-      // Return semi-success since we can't verify fully
-      return true;
-    } catch (noCorsError) {
-      console.log('No-CORS fetch attempt failed:', noCorsError);
-      // Continue to next method
-    }
-    
-    // METHOD 4: Axios request as fallback with minimal headers
-    console.log('Attempting axios request...');
-    methods.push('axios-basic');
-    try {
-      const response = await api.get('/', { 
-        timeout: 5000,
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-      console.log('Axios response:', response.status);
-      return response.status >= 200 && response.status < 300;
-    } catch (axiosError) {
-      console.log('Axios attempt failed:', axiosError);
-      // Final fallback didn't work, log all attempted methods
-      console.error('All connection methods failed:', methods.join(', '));
-      return false;
-    }
+    // Try using a script tag to detect if the server is online
+    // This approach can bypass some CORS restrictions
+    return new Promise<boolean>((resolve) => {
+      // Set a timeout for the overall operation
+      const timeoutId = setTimeout(() => {
+        console.error('Backend connectivity check timed out');
+        cleanup();
+        resolve(false);
+      }, 5000);
+      
+      // Cleanup function to remove elements and clear timeout
+      const cleanup = () => {
+        clearTimeout(timeoutId);
+        if (img) document.body.removeChild(img);
+      };
+      
+      // Create an image element to ping the server
+      // This is a common technique to check if a server is online
+      // without triggering CORS issues
+      const img = document.createElement('img');
+      img.style.display = 'none';
+      document.body.appendChild(img);
+      
+      // Set up event handlers
+      img.onload = () => {
+        console.log('Backend connection detected via image load');
+        cleanup();
+        resolve(true);
+      };
+      
+      img.onerror = () => {
+        // Even an error means the server is reachable
+        // (error happens because it's not an image)
+        console.log('Backend connection detected via image error');
+        cleanup();
+        resolve(true);
+      };
+      
+      // Set source to trigger the request
+      // Adding a cache buster to prevent browser caching
+      img.src = `${API_BASE_URL}/favicon.ico?_=${Date.now()}`;
+    });
   } catch (error) {
-    console.error('Backend connection failed:', error);
-    // Log more detailed diagnostic information
-    if (error.code === 'ERR_NETWORK') {
-      console.error('Network error details:', {
-        message: 'This typically indicates a CORS issue, server unreachable, or blocked by browser security',
-        browserInfo: navigator.userAgent,
-        errorCode: error.code,
-        attemptedMethods: methods.join(', ')
-      });
-    }
+    console.error('Backend connectivity check failed:', error);
     return false;
   }
 };

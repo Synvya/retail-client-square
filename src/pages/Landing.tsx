@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -133,11 +134,11 @@ const Landing = () => {
       
       if (!initiated) {
         console.error('Failed to initiate Square OAuth');
-        toast.error('Failed to connect with Square. Please check console for details.');
+        toast.error('Failed to connect with Square. Please try again later.');
       }
     } catch (error) {
       console.error('Error in handleConnectWithSquare:', error);
-      toast.error('Failed to connect with Square. Please check console for details.');
+      toast.error('Failed to connect with Square. Please try again later.');
     } finally {
       setIsInitiatingOAuth(false);
     }
