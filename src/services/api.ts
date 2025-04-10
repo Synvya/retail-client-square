@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 // Set the fixed cloud API URL
