@@ -55,11 +55,11 @@ api.interceptors.response.use(
   }
 );
 
-// Simple backend connectivity check using just one endpoint
+// Simple backend connectivity check using the root endpoint
 export const pingBackend = async () => {
   try {
-    // Use the correct endpoint
-    const response = await axios.get(`${API_BASE_URL}/health`, { 
+    // Use the root endpoint instead of /health
+    const response = await axios.get(`${API_BASE_URL}/`, { 
       timeout: 5000,
       headers: {
         'Content-Type': 'application/json',
