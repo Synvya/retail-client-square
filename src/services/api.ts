@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 // Set the fixed cloud API URL to use HTTPS instead of HTTP
@@ -59,22 +58,20 @@ api.interceptors.response.use(
   }
 );
 
-// Square OAuth endpoints - updated to match backend documentation
-export const initiateSquareOAuth = async (redirectUri?: string) => {
+// Square OAuth endpoint - synced with Synvya retail-dashboard implementation
+export const initiateSquareOAuth = async () => {
   try {
-    // Exactly match the backend's expected parameter format: redirect_uri
-    const callbackUrl = redirectUri || `${window.location.origin}/auth/callback`;
-    console.log(`Initiating OAuth with callback URL: ${callbackUrl}`);
+    // Generate the callback URL using the current origin
+    const redirectUrl = `${window.location.origin}/auth/callback`;
+    console.log(`Initiating OAuth with callback URL: ${redirectUrl}`);
     
-    // IMPORTANT: Use the exact parameter name expected by the backend: redirect_uri
-    // The backend is expecting this specific parameter name
-    const oauthUrl = `${API_BASE_URL}/square/oauth?redirect_uri=${encodeURIComponent(callbackUrl)}`;
+    // IMPORTANT: Using 'redirect_uri' as the parameter name exactly as expected by backend
+    const oauthUrl = `${API_BASE_URL}/square/oauth?redirect_uri=${encodeURIComponent(redirectUrl)}`;
     console.log(`Redirecting to OAuth URL: ${oauthUrl}`);
     
-    // Open the OAuth URL in the same window
+    // Redirect the user to the Square OAuth authorization URL
     window.location.href = oauthUrl;
     
-    // Return true to indicate that redirection has been initiated
     return true;
   } catch (error) {
     console.error('Error initiating Square OAuth:', error);

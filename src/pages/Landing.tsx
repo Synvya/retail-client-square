@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -78,18 +77,17 @@ const Landing = () => {
       
       if (accessToken && merchantId) {
         console.log('OAuth callback detected, processing...');
-        console.log('Access token:', accessToken.substring(0, 10) + '...');
+        console.log('Access token received:', accessToken.substring(0, 5) + '...');
         console.log('Merchant ID:', merchantId);
-        console.log('Profile published:', profilePublished);
+        console.log('Profile published status:', profilePublished);
         
-        // Store the tokens and profile status immediately to ensure they're available
+        // Store the tokens and profile status
         localStorage.setItem('access_token', accessToken);
         localStorage.setItem('merchant_id', merchantId);
         localStorage.setItem('profile_published', profilePublished || 'false');
         
         // Remove query parameters from URL to prevent reprocessing
         if (window.history && window.history.replaceState) {
-          // Remove the query parameters but keep the path
           const cleanUrl = window.location.href.split('?')[0];
           window.history.replaceState({}, document.title, cleanUrl);
         }
@@ -138,17 +136,10 @@ const Landing = () => {
     
     try {
       console.log('Initiating Square OAuth flow');
-      // Using the current origin as the callback URL with explicit protocol
-      const protocol = window.location.protocol;
-      const host = window.location.host;
-      const callbackUrl = `${protocol}//${host}/auth/callback`;
-      console.log(`Using callback URL: ${callbackUrl}`);
-      
-      // Pass the callback URL exactly as expected by the backend
-      await initiateSquareOAuth(callbackUrl);
-      // The redirect will happen automatically if successful
+      await initiateSquareOAuth();
+      // The redirect will happen automatically from the api.ts function
     } catch (error) {
-      console.error('Error in handleConnectWithSquare:', error);
+      console.error('Error initiating Square OAuth:', error);
       toast.error('Failed to connect with Square. Please try again later.');
       setOauthError('Failed to initiate Square connection. Please try again later.');
       setIsInitiatingOAuth(false);
