@@ -62,11 +62,12 @@ api.interceptors.response.use(
 // Square OAuth endpoints - updated to match backend documentation
 export const initiateSquareOAuth = async (redirectUri?: string) => {
   try {
-    // Use the explicitly provided callback URL or build one from the current origin
+    // Exactly match the backend's expected parameter format: redirect_uri
     const callbackUrl = redirectUri || `${window.location.origin}/auth/callback`;
     console.log(`Initiating OAuth with callback URL: ${callbackUrl}`);
     
-    // Build the OAuth URL with proper encoding
+    // IMPORTANT: Use the exact parameter name expected by the backend: redirect_uri
+    // The backend is expecting this specific parameter name
     const oauthUrl = `${API_BASE_URL}/square/oauth?redirect_uri=${encodeURIComponent(callbackUrl)}`;
     console.log(`Redirecting to OAuth URL: ${oauthUrl}`);
     

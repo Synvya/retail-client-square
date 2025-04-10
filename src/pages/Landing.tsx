@@ -144,6 +144,7 @@ const Landing = () => {
       const callbackUrl = `${protocol}//${host}/auth/callback`;
       console.log(`Using callback URL: ${callbackUrl}`);
       
+      // Pass the callback URL exactly as expected by the backend
       await initiateSquareOAuth(callbackUrl);
       // The redirect will happen automatically if successful
     } catch (error) {
