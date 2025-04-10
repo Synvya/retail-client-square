@@ -8,6 +8,8 @@ export const useBackendConnection = () => {
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
 
   const checkBackendConnection = async () => {
+    if (isCheckingConnection) return; // Prevent multiple simultaneous checks
+    
     console.log('Checking backend status...');
     setIsCheckingConnection(true);
     setBackendStatus('checking');
@@ -32,23 +34,23 @@ export const useBackendConnection = () => {
     }
   };
 
-  // Initial check with minimal retries
+  // Initial check on mount
   useEffect(() => {
     console.log('useBackendConnection hook initialized, checking backend status...');
     checkBackendConnection();
     
     // Set up a single retry interval if offline
     const retryInterval = window.setInterval(() => {
-      if (backendStatus === 'offline') {
+      if (backendStatus === 'offline' && !isCheckingConnection) {
         console.log('Retrying backend connection check...');
         checkBackendConnection();
       }
-    }, 10000); // Retry every 10 seconds instead of 5
+    }, 10000); // Retry every 10 seconds
     
     return () => {
       window.clearInterval(retryInterval);
     };
-  }, [backendStatus]);
+  }, [backendStatus, isCheckingConnection]);
 
   return {
     backendStatus,
