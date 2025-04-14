@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 // Use the correct API URL
@@ -166,11 +165,26 @@ export const publishLocations = async () => {
   try {
     console.log('Publishing merchant locations');
     const response = await api.post('/square/locations/publish');
-    console.log('Locations publish response:', response.data);
-    return response.data;
+    
+    // Enhanced logging of the exact response structure
+    console.log('Locations publish response status:', response.status);
+    console.log('Locations publish response data:', JSON.stringify(response.data, null, 2));
+    
+    // Improved success detection logic
+    // Consider the request successful if we get a 2xx status, even if the response has a different structure than expected
+    const isSuccess = response.status >= 200 && response.status < 300;
+    
+    // If the API returns a success field, use that; otherwise, use HTTP status-based success
+    const result = {
+      success: response.data?.success !== undefined ? response.data.success : isSuccess,
+      data: response.data
+    };
+    
+    console.log('Interpreted result:', result);
+    return result;
   } catch (error) {
     console.error('Error publishing locations:', error);
-    throw error;
+    return { success: false, error: error };
   }
 };
 

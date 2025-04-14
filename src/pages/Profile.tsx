@@ -56,10 +56,13 @@ const Profile = () => {
     
     try {
       const result = await publishLocations();
+      console.log('Location publish result:', result);
+      
       if (result && result.success) {
         toast.success('Locations published successfully!');
       } else {
-        toast.error('Failed to publish locations.');
+        const errorMessage = result.data?.message || 'Failed to publish locations.';
+        toast.error(errorMessage);
       }
     } catch (error) {
       console.error('Error publishing locations:', error);
