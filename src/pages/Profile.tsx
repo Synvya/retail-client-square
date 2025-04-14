@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,20 +9,20 @@ import FileUploader from '@/components/FileUploader';
 import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
 import { MapPin, Package } from 'lucide-react';
+import { publishLocations } from '@/services/api';
 
 const Profile = () => {
   const { profile, updateProfile, saveProfile, isLoading } = useProfile();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPublishingLocations, setIsPublishingLocations] = useState(false);
 
-  // Redirect to landing if not connected
   useEffect(() => {
     if (!profile.isConnected) {
       navigate('/');
     }
   }, [profile.isConnected, navigate]);
 
-  // Add a debug effect to log profile data when it changes
   useEffect(() => {
     console.log('Profile data in component:', profile);
   }, [profile]);
@@ -50,6 +49,24 @@ const Profile = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     updateProfile({ [name]: value });
+  };
+
+  const handlePublishLocations = async () => {
+    setIsPublishingLocations(true);
+    
+    try {
+      const result = await publishLocations();
+      if (result && result.success) {
+        toast.success('Locations published successfully!');
+      } else {
+        toast.error('Failed to publish locations.');
+      }
+    } catch (error) {
+      console.error('Error publishing locations:', error);
+      toast.error('An error occurred while publishing locations.');
+    } finally {
+      setIsPublishingLocations(false);
+    }
   };
 
   if (isLoading) {
@@ -182,11 +199,13 @@ const Profile = () => {
             <div className="flex justify-center gap-4 w-full">
               <Button
                 type="button"
+                onClick={handlePublishLocations}
+                disabled={isPublishingLocations}
                 className="rounded-full border-2 border-synvya-dark bg-white text-synvya-dark hover:bg-gray-50 text-lg py-6 px-16"
                 variant="outline"
               >
                 <MapPin className="mr-2" />
-                Locations
+                {isPublishingLocations ? 'Publishing...' : 'Locations'}
               </Button>
               
               <Button

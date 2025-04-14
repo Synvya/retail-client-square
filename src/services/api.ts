@@ -160,4 +160,17 @@ export const getMerchantInfo = async () => {
   }
 };
 
+// Locations API
+export const publishLocations = async () => {
+  try {
+    console.log('Publishing merchant locations');
+    const response = await api.post('/locations/publish');
+    console.log('Locations publish response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error publishing locations:', error);
+    throw error;
+  }
+};
+
 export default api;
