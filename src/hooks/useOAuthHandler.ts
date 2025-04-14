@@ -83,10 +83,12 @@ export const useOAuthHandler = () => {
         window.history.replaceState({}, document.title, cleanUrl);
       }
       
+      // Only show success message if profile was published successfully
       if (profilePublished === 'true') {
         toast.success('Successfully connected with Square and published your profile!');
       } else {
-        toast.warning('Connected with Square, but profile publishing failed. You can retry in settings.');
+        // Stay silent about profile publishing if the value is false
+        toast.success('Successfully connected with Square!');
       }
       
       const success = await connectWithSquare();
