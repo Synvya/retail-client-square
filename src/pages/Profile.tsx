@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,8 @@ import { useProfile } from '@/context/ProfileContext';
 import Logo from '@/components/Logo';
 import FileUploader from '@/components/FileUploader';
 import { toast } from 'sonner';
+import { Separator } from '@/components/ui/separator';
+import { MapPin, Package } from 'lucide-react';
 
 const Profile = () => {
   const { profile, updateProfile, saveProfile, isLoading } = useProfile();
@@ -151,24 +154,50 @@ const Profile = () => {
             </div>
           </div>
 
-          <div className="flex justify-center gap-4 pt-4">
-            <Button
-              type="submit"
-              disabled={isSubmitting || isLoading}
-              className="rounded-full border-2 border-synvya-dark bg-white text-synvya-dark hover:bg-gray-50 text-lg py-6 px-16"
-              variant="outline"
-            >
-              {isSubmitting ? 'Updating...' : 'Update'}
-            </Button>
+          <div className="flex flex-col items-center gap-4 pt-4">
+            <div className="flex justify-center gap-4 w-full">
+              <Button
+                type="submit"
+                disabled={isSubmitting || isLoading}
+                className="rounded-full border-2 border-synvya-dark bg-white text-synvya-dark hover:bg-gray-50 text-lg py-6 px-16"
+                variant="outline"
+              >
+                {isSubmitting ? 'Updating...' : 'Update'}
+              </Button>
+              
+              <Button
+                type="button"
+                onClick={() => navigate('/visualization')}
+                className="rounded-full border-2 border-synvya-dark bg-white text-synvya-dark hover:bg-gray-50 text-lg py-6 px-16"
+                variant="outline"
+              >
+                View
+              </Button>
+            </div>
             
-            <Button
-              type="button"
-              onClick={() => navigate('/visualization')}
-              className="rounded-full border-2 border-synvya-dark bg-white text-synvya-dark hover:bg-gray-50 text-lg py-6 px-16"
-              variant="outline"
-            >
-              View
-            </Button>
+            <Separator className="my-4 bg-synvya-dark/20 h-[2px] w-full" />
+            
+            <div className="text-lg font-medium text-synvya-dark self-start mb-2">Publish:</div>
+            
+            <div className="flex justify-center gap-4 w-full">
+              <Button
+                type="button"
+                className="rounded-full border-2 border-synvya-dark bg-white text-synvya-dark hover:bg-gray-50 text-lg py-6 px-16"
+                variant="outline"
+              >
+                <MapPin className="mr-2" />
+                Locations
+              </Button>
+              
+              <Button
+                type="button"
+                className="rounded-full border-2 border-synvya-dark bg-white text-synvya-dark hover:bg-gray-50 text-lg py-6 px-16"
+                variant="outline"
+              >
+                <Package className="mr-2" />
+                Products
+              </Button>
+            </div>
           </div>
         </form>
       </div>
