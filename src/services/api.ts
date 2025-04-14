@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 
 // Use the correct API URL
@@ -164,7 +165,7 @@ export const getMerchantInfo = async () => {
 export const publishLocations = async () => {
   try {
     console.log('Publishing merchant locations');
-    const response = await api.post('/locations/publish');
+    const response = await api.post('/square/locations/publish');
     console.log('Locations publish response:', response.data);
     return response.data;
   } catch (error) {
