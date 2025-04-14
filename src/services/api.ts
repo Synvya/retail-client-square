@@ -184,7 +184,12 @@ export const publishLocations = async () => {
     return result;
   } catch (error) {
     console.error('Error publishing locations:', error);
-    return { success: false, error: error };
+    // Return consistent structure even in the error case, with data property
+    return { 
+      success: false, 
+      data: { message: 'Failed to connect to the server' },
+      error: error 
+    };
   }
 };
 

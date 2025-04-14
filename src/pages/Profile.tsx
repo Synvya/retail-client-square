@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -61,6 +62,7 @@ const Profile = () => {
       if (result && result.success) {
         toast.success('Locations published successfully!');
       } else {
+        // Safely access the error message with optional chaining and fallback
         const errorMessage = result.data?.message || 'Failed to publish locations.';
         toast.error(errorMessage);
       }
