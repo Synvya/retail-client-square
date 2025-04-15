@@ -38,6 +38,9 @@ export const useProfileOperations = (
         website: profile.website,
         hashtags: profile.categories.split(',').map(tag => tag.trim()).filter(Boolean),
         profile_type: profile.businessType,
+        
+        // Always set the namespace to the required value
+        namespace: "com.synvya.merchant"
       };
 
       // Special handling for nip05 - use the format name@synvya.com
@@ -116,6 +119,9 @@ export const useProfileOperations = (
         website: profile.website,
         hashtags: profile.categories.split(',').map(tag => tag.trim()).filter(Boolean),
         profile_type: profile.businessType,
+        
+        // Always set the namespace to the required value
+        namespace: "com.synvya.merchant"
       };
 
       // Special handling for nip05 - use the format name@synvya.com
@@ -182,4 +188,3 @@ export const useProfileOperations = (
     republishProfile
   };
 };
-
