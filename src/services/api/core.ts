@@ -1,8 +1,11 @@
 
 import axios from 'axios';
 
-// Use the correct API URL
-const API_BASE_URL = 'https://api.synvya.com';
+// Use environment-specific API URL
+// For development environment, use localhost
+const API_BASE_URL = import.meta.env.PROD 
+  ? 'https://api.synvya.com' 
+  : 'http://localhost:3000';
 
 console.log('API_BASE_URL:', API_BASE_URL);
 
@@ -58,6 +61,7 @@ api.interceptors.response.use(
 // Simple backend connectivity check using only the root endpoint
 export const pingBackend = async () => {
   try {
+    console.log('Pinging backend at:', API_BASE_URL);
     // Only check the root endpoint with minimal headers
     const response = await api.get('/', {
       timeout: 5000,
@@ -66,6 +70,7 @@ export const pingBackend = async () => {
         'Cache-Control': 'no-cache'
       }
     });
+    console.log('Ping response:', response.status);
     return response.status >= 200 && response.status < 300;
   } catch (error) {
     console.error('Backend connectivity check failed:', error);
