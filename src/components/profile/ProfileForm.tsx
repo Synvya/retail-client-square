@@ -4,6 +4,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import FileUploader from '@/components/FileUploader';
 import { Profile } from '@/types/profile';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 
 interface ProfileFormProps {
   profile: Profile;
@@ -98,8 +105,29 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
           placeholder="comma separated list"
         />
       </div>
+
+      <div className="flex items-center gap-4">
+        <label htmlFor="businessType" className="text-lg font-medium w-32">Business Type:</label>
+        <Select 
+          value={profile.businessType} 
+          onValueChange={(value) => updateProfile({ businessType: value })}
+        >
+          <SelectTrigger className="border-2 border-synvya-dark rounded-md">
+            <SelectValue placeholder="Select business type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="retail">Retail</SelectItem>
+            <SelectItem value="restaurant">Restaurant</SelectItem>
+            <SelectItem value="service">Services</SelectItem>
+            <SelectItem value="business">Business</SelectItem>
+            <SelectItem value="entertainment">Entertainment</SelectItem>
+            <SelectItem value="other">Other</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 };
 
 export default ProfileForm;
+

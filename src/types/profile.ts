@@ -1,3 +1,4 @@
+
 export interface MerchantProfile {
   name: string;
   display_name: string;
@@ -23,6 +24,7 @@ export interface Profile {
   bannerPictureUrl: string | null;
   website: string;
   categories: string;
+  businessType: string;
   isConnected: boolean;
   publicKey: string;
   profilePublished: boolean;
@@ -48,7 +50,9 @@ export const defaultProfile: Profile = {
   bannerPictureUrl: null,
   website: '',
   categories: '',
+  businessType: 'retail',
   isConnected: false,
   publicKey: '',
   profilePublished: false,
 };
+

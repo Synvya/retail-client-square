@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 import { updateMerchantProfile, getMerchantProfile } from '@/services/api';
 import { Profile, MerchantProfile } from '@/types/profile';
@@ -36,6 +37,7 @@ export const useProfileOperations = (
         about: profile.about,
         website: profile.website,
         hashtags: profile.categories.split(',').map(tag => tag.trim()).filter(Boolean),
+        profile_type: profile.businessType,
       };
 
       // Special handling for nip05 - use the format name@synvya.com
@@ -113,6 +115,7 @@ export const useProfileOperations = (
         about: profile.about,
         website: profile.website,
         hashtags: profile.categories.split(',').map(tag => tag.trim()).filter(Boolean),
+        profile_type: profile.businessType,
       };
 
       // Special handling for nip05 - use the format name@synvya.com
@@ -165,6 +168,7 @@ export const useProfileOperations = (
       bannerPictureUrl: null,
       website: '',
       categories: '',
+      businessType: 'retail',
       isConnected: false,
       publicKey: '',
       profilePublished: false,
@@ -178,3 +182,4 @@ export const useProfileOperations = (
     republishProfile
   };
 };
+

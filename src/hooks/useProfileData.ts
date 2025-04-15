@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Profile, defaultProfile } from '@/types/profile';
@@ -86,6 +87,7 @@ export const useProfileData = () => {
         bannerPictureUrl: merchantProfile.banner || null,
         website: merchantProfile.website || '',
         categories: Array.isArray(merchantProfile.hashtags) ? merchantProfile.hashtags.join(', ') : '',
+        businessType: merchantProfile.profile_type || 'retail',
         isConnected: true,
         publicKey: publicKey,
         profilePublished: localStorage.getItem('profile_published') === 'true',
@@ -106,3 +108,4 @@ export const useProfileData = () => {
     fetchProfileData
   };
 };
+
