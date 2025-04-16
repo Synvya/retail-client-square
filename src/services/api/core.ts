@@ -4,7 +4,7 @@ import axios from 'axios';
 // Use environment-specific API URL
 // For development environment, use localhost
 const API_BASE_URL = import.meta.env.PROD 
-  ? 'https://api.synvya.com' 
+  ? 'https://retail-backend.synvya.com' 
   : 'http://localhost:3000';
 
 console.log('API_BASE_URL:', API_BASE_URL);
