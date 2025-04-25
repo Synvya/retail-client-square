@@ -1,6 +1,5 @@
+
 import React from 'react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 import { LoaderCircle } from 'lucide-react';
 
 interface BackendStatusAlertProps {
@@ -29,31 +28,6 @@ const BackendStatusAlert = ({
         Checking backend connection
         <LoadingDots />
       </p>
-    );
-  }
-
-  if (status === 'offline') {
-    return (
-      <Alert variant="destructive" className="mb-6">
-        <AlertTitle>Backend Connection Failed</AlertTitle>
-        <AlertDescription>
-          <p className="mb-2">The application cannot connect to the backend server.</p>
-          <p className="mb-2">Please ensure the backend service is running and accessible.</p>
-          
-          <Button 
-            onClick={onRetry} 
-            variant="secondary" 
-            className="w-full mt-2"
-            disabled={isCheckingConnection}
-          >
-            {isCheckingConnection ? (
-              <>Checking Connection<LoadingDots /></>
-            ) : (
-              <>Retry Connection Test</>
-            )}
-          </Button>
-        </AlertDescription>
-      </Alert>
     );
   }
 
