@@ -48,7 +48,7 @@ const BackendStatusAlert = ({
             disabled={isCheckingConnection}
           >
             {isCheckingConnection ? (
-              <><RefreshCw className="animate-spin h-4 w-4 mr-2" /> Testing Connection...</>
+              <>Checking Connection...</>
             ) : (
               <>Retry Connection Test</>
             )}
