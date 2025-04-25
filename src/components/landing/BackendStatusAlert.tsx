@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -53,17 +52,6 @@ const BackendStatusAlert = ({
               <>Retry Connection Test</>
             )}
           </Button>
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  if (status === 'online') {
-    return (
-      <Alert variant="default" className="mb-6 border-green-500 bg-green-50">
-        <AlertTitle className="text-green-700">Backend Connected</AlertTitle>
-        <AlertDescription className="text-green-700">
-          Successfully connected to backend server
         </AlertDescription>
       </Alert>
     );
