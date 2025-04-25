@@ -11,13 +11,17 @@ export const useBackendConnection = () => {
   const checkBackendConnection = async (silent = false) => {
     if (isCheckingConnection) return; // Prevent multiple simultaneous checks
     
+    console.log('Checking backend connection, silent mode:', silent);
     setIsCheckingConnection(true);
     setBackendStatus('checking');
     
     try {
+      console.log('Attempting to ping backend');
       const isOnline = await pingBackend();
+      console.log('Backend ping result:', isOnline);
       
       if (isOnline) {
+        console.log('Backend connection successful');
         setBackendStatus('online');
         // Only show success toast once per session and not on silent checks
         if (!hasNotifiedRef.current && !silent) {
@@ -25,6 +29,7 @@ export const useBackendConnection = () => {
           hasNotifiedRef.current = true;
         }
       } else {
+        console.log('Backend connection failed');
         setBackendStatus('offline');
         // Reset notification flag when offline
         hasNotifiedRef.current = false;
@@ -46,11 +51,13 @@ export const useBackendConnection = () => {
       }
     } finally {
       setIsCheckingConnection(false);
+      console.log('Connection check completed. Status:', backendStatus);
     }
   };
 
   // Single check on mount only
   useEffect(() => {
+    console.log('useBackendConnection hook initialized');
     // Run initial check silently - no toasts
     checkBackendConnection(true);
     

@@ -8,6 +8,8 @@ const API_BASE_URL = import.meta.env.PROD
   : 'http://localhost:3000';
 
 console.log('API_BASE_URL:', API_BASE_URL);
+console.log('Environment is PROD:', import.meta.env.PROD);
+console.log('Current hostname:', window.location.hostname);
 
 // Create axios instance with base URL
 const api = axios.create({
@@ -62,6 +64,7 @@ api.interceptors.response.use(
 export const pingBackend = async () => {
   try {
     console.log('Pinging backend at:', API_BASE_URL);
+    console.log('Current time:', new Date().toISOString());
     // Only check the root endpoint with minimal headers
     const response = await api.get('/', {
       timeout: 5000,
@@ -74,6 +77,18 @@ export const pingBackend = async () => {
     return response.status >= 200 && response.status < 300;
   } catch (error) {
     console.error('Backend connectivity check failed:', error);
+    console.error('Error details:', error);
+    // Check if it's a CORS issue
+    if (error.message && error.message.includes('Network Error')) {
+      console.error('This appears to be a network or CORS issue.');
+      if (API_BASE_URL.includes('https') && window.location.protocol === 'http:') {
+        console.error('Mixed content issue detected: HTTPS API being called from HTTP origin');
+      }
+    }
+    // Check for timeout
+    if (error.code === 'ECONNABORTED') {
+      console.error('Request timed out - backend may be slow or unavailable');
+    }
     return false;
   }
 };

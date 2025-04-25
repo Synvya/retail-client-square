@@ -48,7 +48,7 @@ const BackendStatusAlert = ({
             disabled={isCheckingConnection}
           >
             {isCheckingConnection ? (
-              <>Checking Connection...</>
+              <>Checking Connection<LoadingDots /></>
             ) : (
               <>Retry Connection Test</>
             )}
