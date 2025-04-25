@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,6 @@ const Landing = () => {
     isConnected
   } = useOAuthHandler();
 
-  // Handle OAuth flow and profile connection
   useEffect(() => {
     console.log('Landing page loaded');
     console.log('Current URL:', window.location.href);
@@ -31,7 +29,6 @@ const Landing = () => {
       return;
     }
     
-    // Check for OAuth parameters in URL (both in query string and hash)
     const hasOAuthParams = 
       window.location.pathname.includes('/auth/callback') || 
       window.location.search.includes('code=') || 
@@ -73,10 +70,6 @@ const Landing = () => {
         >
           {isInitiatingOAuth ? 'Connecting...' : 'Connect with Square'}
         </Button>
-        
-        <div className="mt-4 text-sm text-gray-500">
-          Note: If connecting with Square doesn't work in preview, please open in a new tab.
-        </div>
       </div>
     </div>
   );
