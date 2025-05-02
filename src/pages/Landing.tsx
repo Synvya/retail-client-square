@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -51,7 +52,7 @@ const Landing = () => {
         </div>
         
         <p className="text-xl text-synvya-dark text-center mb-8 mt-4">
-          Powering commerce for the agentic era
+          Empower Your Small Business
         </p>
         
         <BackendStatusAlert 
