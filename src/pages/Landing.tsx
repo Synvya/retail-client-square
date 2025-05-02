@@ -71,6 +71,10 @@ const Landing = () => {
         >
           {isInitiatingOAuth ? 'Connecting...' : 'Connect with Square'}
         </Button>
+        
+        <p className="text-sm text-gray-500 mt-3 text-center">
+          Log in to your Square account on a separate tab before clicking on Connect with Square
+        </p>
       </div>
     </div>
   );
