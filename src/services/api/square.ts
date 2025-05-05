@@ -1,42 +1,44 @@
 
 import api from './core';
 
-// Update the Square OAuth endpoint with improved redirect handling
+// Update the Square OAuth endpoint with cross-domain iframe handling
 export const initiateSquareOAuth = async () => {
   try {
     // Get the current host from the URL
     const currentHost = window.location.host;
     const protocol = window.location.protocol;
-
-    // Check if we're in the Lovable preview iframe
-    const isLovablePreview = currentHost.includes('lovableproject.com') &&
-      window.location !== window.parent.location;
-
+    
     console.log('OAuth initialization details:', {
       currentHost,
       protocol,
       isInIframe: window.location !== window.parent.location,
-      isLovablePreview
+      fullUrl: window.location.href
     });
 
+    // Check if we're in the Lovable preview iframe
+    const isInIframe = window.location !== window.parent.location;
+    
     // Generate the redirect URL based on environment
-    let redirectUrl;
-    if (isLovablePreview) {
-      // If in preview, use the parent window's location to avoid iframe issues
-      redirectUrl = `${protocol}//${currentHost}/auth/callback`;
-      console.log('Using preview redirect URL:', redirectUrl);
-    } else {
-      // For standalone browser windows, use standard redirect
-      redirectUrl = `${window.location.origin}/auth/callback`;
-      console.log('Using standard redirect URL:', redirectUrl);
-    }
-
-    // Using the exact parameter name expected by the backend: redirect_uri
+    let redirectUrl = `${window.location.origin}/auth/callback`;
+    console.log('Using redirect URL:', redirectUrl);
+    
+    // For sandboxed environments, open in a new window instead of redirecting
+    // since iframe navigation to external domains might be blocked
     const oauthUrl = `${api.defaults.baseURL}/square/oauth?redirect_uri=${encodeURIComponent(redirectUrl)}`;
-    console.log(`Redirecting to OAuth URL: ${oauthUrl}`);
-
-    // Open in current window - this works better for OAuth flows
-    window.location.href = oauthUrl;
+    console.log(`Square OAuth URL: ${oauthUrl}`);
+    
+    if (isInIframe) {
+      console.log('In iframe, opening in new window for sandbox environments');
+      // Open in a new window for better sandbox compatibility
+      window.open(oauthUrl, 'squareOAuth', 'width=800,height=800');
+      
+      // Return early, we won't redirect the current page
+      return true;
+    } else {
+      console.log('Not in iframe, redirecting current window');
+      // Direct navigation for non-iframe contexts
+      window.location.href = oauthUrl;
+    }
 
     return true;
   } catch (error) {

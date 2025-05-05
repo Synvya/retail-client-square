@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { initiateSquareOAuth } from '@/services/api';
 import { useProfile } from '@/context/ProfileContext';
@@ -10,6 +10,56 @@ export const useOAuthHandler = () => {
   const navigate = useNavigate();
   const [isInitiatingOAuth, setIsInitiatingOAuth] = useState(false);
   const [oauthError, setOauthError] = useState<string | null>(null);
+  const [windowListener, setWindowListener] = useState(false);
+
+  // Add a message listener for the OAuth popup window
+  useEffect(() => {
+    const handleOAuthMessage = (event: MessageEvent) => {
+      console.log('Received postMessage event:', event);
+      
+      // Make sure the message is from a trusted source
+      if (event.origin.includes('squareupsandbox.com') || 
+          event.origin.includes('retail-backend.synvya.com')) {
+        
+        console.log('Processing OAuth message from trusted source');
+        const data = event.data;
+        
+        if (data && data.type === 'square-oauth-callback') {
+          console.log('OAuth callback data received:', data);
+          
+          if (data.error) {
+            setOauthError(`Square authorization failed: ${data.error}`);
+            toast.error(`Square authorization failed: ${data.error}`);
+          } else if (data.accessToken && data.merchantId) {
+            // Store tokens
+            localStorage.setItem('access_token', data.accessToken);
+            localStorage.setItem('merchant_id', data.merchantId);
+            localStorage.setItem('profile_published', data.profilePublished || 'false');
+            
+            toast.success('Successfully connected with Square!');
+            connectWithSquare().then(success => {
+              if (success) {
+                navigate('/profile');
+              }
+            });
+          }
+        }
+      }
+    };
+
+    if (!windowListener) {
+      console.log('Adding window message listener for OAuth callbacks');
+      window.addEventListener('message', handleOAuthMessage);
+      setWindowListener(true);
+    }
+    
+    return () => {
+      if (windowListener) {
+        console.log('Removing window message listener');
+        window.removeEventListener('message', handleOAuthMessage);
+      }
+    };
+  }, [connectWithSquare, navigate, windowListener]);
 
   const handleConnectWithSquare = async (backendStatus: 'checking' | 'online' | 'offline') => {
     console.log('Connect with Square button clicked');
@@ -25,6 +75,13 @@ export const useOAuthHandler = () => {
     try {
       console.log('Initiating Square OAuth flow');
       await initiateSquareOAuth();
+      
+      // We won't set isInitiatingOAuth to false immediately because the OAuth flow
+      // continues in a new window, and we'll handle completion in the message listener
+      setTimeout(() => {
+        setIsInitiatingOAuth(false);
+      }, 5000); // Reset state after 5 seconds so button becomes clickable again
+      
     } catch (error) {
       console.error('Error initiating Square OAuth:', error);
       toast.error('Failed to connect with Square. Please try again later.');
