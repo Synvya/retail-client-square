@@ -63,7 +63,7 @@ export const useProfileData = () => {
       console.log('Fetching profile data from backend');
       const merchantProfile = await getMerchantProfile();
       
-      // Log the complete response to debug
+      // Log the complete response for debugging
       console.log('Received profile data (complete):', JSON.stringify(merchantProfile, null, 2));
       
       // Check if we have a valid profile object
@@ -75,14 +75,12 @@ export const useProfileData = () => {
       // Debug merchant profile structure
       console.log('Profile structure keys:', Object.keys(merchantProfile));
       
-      // Determine public key, with fallbacks
+      // Determine public key with proper fallbacks
       let publicKey = '';
       if (merchantProfile.public_key) {
-        // First try to use the dedicated public_key field
         publicKey = merchantProfile.public_key;
         console.log('Using public_key from API response:', publicKey);
       } else if (merchantProfile.nip05) {
-        // Fall back to parsing from nip05 if available
         publicKey = typeof merchantProfile.nip05 === 'string' ? merchantProfile.nip05.split('@')[0] || '' : '';
         console.log('Falling back to nip05-derived public key:', publicKey);
       }

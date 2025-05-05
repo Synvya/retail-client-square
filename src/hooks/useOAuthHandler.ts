@@ -39,9 +39,21 @@ export const useOAuthHandler = () => {
             toast.success('Successfully connected with Square!');
             connectWithSquare().then(success => {
               if (success) {
+                console.log('Successfully connected with Square, fetching profile data...');
                 // Force refresh profile data
-                fetchProfileData && fetchProfileData();
-                navigate('/profile');
+                if (fetchProfileData) {
+                  fetchProfileData().then(profileSuccess => {
+                    console.log('Profile fetch result:', profileSuccess);
+                    if (profileSuccess) {
+                      navigate('/profile');
+                    } else {
+                      toast.error('Connected but failed to load profile data. Please try again.');
+                    }
+                  });
+                } else {
+                  console.error('fetchProfileData function not available');
+                  navigate('/profile');
+                }
               }
             });
           }
