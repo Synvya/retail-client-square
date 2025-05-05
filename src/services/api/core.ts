@@ -1,11 +1,7 @@
-
 import axios from 'axios';
 
-// Use environment-specific API URL
-// For development environment, use localhost
-const API_BASE_URL = import.meta.env.PROD 
-  ? 'https://retail-backend.synvya.com' 
-  : 'http://localhost:3000';
+// Always use the production API URL
+const API_BASE_URL = 'https://retail-backend.synvya.com';
 
 console.log('API_BASE_URL:', API_BASE_URL);
 console.log('Environment is PROD:', import.meta.env.PROD);
