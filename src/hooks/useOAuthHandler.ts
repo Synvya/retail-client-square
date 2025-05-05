@@ -6,7 +6,7 @@ import { useProfile } from '@/context/ProfileContext';
 import { useNavigate } from 'react-router-dom';
 
 export const useOAuthHandler = () => {
-  const { connectWithSquare, profile } = useProfile();
+  const { connectWithSquare, profile, fetchProfileData } = useProfile();
   const navigate = useNavigate();
   const [isInitiatingOAuth, setIsInitiatingOAuth] = useState(false);
   const [oauthError, setOauthError] = useState<string | null>(null);
@@ -39,6 +39,8 @@ export const useOAuthHandler = () => {
             toast.success('Successfully connected with Square!');
             connectWithSquare().then(success => {
               if (success) {
+                // Force refresh profile data
+                fetchProfileData && fetchProfileData();
                 navigate('/profile');
               }
             });
@@ -59,7 +61,7 @@ export const useOAuthHandler = () => {
         window.removeEventListener('message', handleOAuthMessage);
       }
     };
-  }, [connectWithSquare, navigate, windowListener]);
+  }, [connectWithSquare, navigate, windowListener, fetchProfileData]);
 
   const handleConnectWithSquare = async (backendStatus: 'checking' | 'online' | 'offline') => {
     console.log('Connect with Square button clicked');
@@ -151,6 +153,8 @@ export const useOAuthHandler = () => {
       const success = await connectWithSquare();
       if (success) {
         console.log('Successfully connected with Square, navigating to profile');
+        // Force refresh profile data
+        fetchProfileData && fetchProfileData();
         navigate('/profile');
         return true;
       } else {
@@ -162,13 +166,14 @@ export const useOAuthHandler = () => {
     }
     
     return false;
-  }, [connectWithSquare, navigate]);
+  }, [connectWithSquare, navigate, fetchProfileData]);
 
   return {
     isInitiatingOAuth,
     oauthError,
     handleConnectWithSquare,
     processOAuthCallback,
-    isConnected: profile.isConnected
+    isConnected: profile.isConnected,
+    fetchProfileData
   };
 };

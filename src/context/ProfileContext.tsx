@@ -8,7 +8,7 @@ import { ProfileContextType, defaultProfile } from '@/types/profile';
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 
 export const ProfileProvider = ({ children }: { children: ReactNode }) => {
-  const { profile, setProfile, isLoading, setIsLoading } = useProfileData();
+  const { profile, setProfile, isLoading, setIsLoading, fetchProfileData } = useProfileData();
   const { connectWithSquare } = useProfileOAuth(profile, setProfile, setIsLoading);
   const { updateProfile, saveProfile, resetProfile, republishProfile } = useProfileOperations(
     profile, 
@@ -26,6 +26,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         resetProfile,
         isLoading,
         republishProfile,
+        fetchProfileData,
       }}
     >
       {children}

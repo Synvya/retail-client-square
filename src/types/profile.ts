@@ -38,6 +38,7 @@ export interface ProfileContextType {
   resetProfile: () => void;
   isLoading: boolean;
   republishProfile: () => Promise<boolean>;
+  fetchProfileData?: () => Promise<boolean>;
 }
 
 export const defaultProfile: Profile = {
@@ -55,4 +56,3 @@ export const defaultProfile: Profile = {
   publicKey: '',
   profilePublished: false,
 };
-

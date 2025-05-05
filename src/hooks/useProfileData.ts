@@ -64,7 +64,7 @@ export const useProfileData = () => {
       const merchantProfile = await getMerchantProfile();
       
       // Log the complete response to debug
-      console.log('Received profile data (complete):', JSON.stringify(merchantProfile));
+      console.log('Received profile data (complete):', JSON.stringify(merchantProfile, null, 2));
       
       // Check if we have a valid profile object
       if (!merchantProfile || typeof merchantProfile !== 'object') {
@@ -72,6 +72,9 @@ export const useProfileData = () => {
         return false;
       }
 
+      // Debug merchant profile structure
+      console.log('Profile structure keys:', Object.keys(merchantProfile));
+      
       // Determine public key, with fallbacks
       let publicKey = '';
       if (merchantProfile.public_key) {
@@ -85,7 +88,7 @@ export const useProfileData = () => {
       }
 
       // Convert backend format to our app format with null fallbacks for each field
-      setProfile({
+      const updatedProfile = {
         name: merchantProfile.name || '',
         displayName: merchantProfile.display_name || '',
         about: merchantProfile.about || '',
@@ -99,7 +102,10 @@ export const useProfileData = () => {
         isConnected: true,
         publicKey: publicKey,
         profilePublished: localStorage.getItem('profile_published') === 'true',
-      });
+      };
+      
+      console.log('Updated profile data:', JSON.stringify(updatedProfile, null, 2));
+      setProfile(updatedProfile);
 
       return true;
     } catch (error) {
