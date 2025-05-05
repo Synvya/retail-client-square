@@ -62,7 +62,15 @@ export const useProfileData = () => {
     try {
       console.log('Fetching profile data from backend');
       const merchantProfile = await getMerchantProfile();
-      console.log('Received profile data:', merchantProfile);
+      
+      // Log the complete response to debug
+      console.log('Received profile data (complete):', JSON.stringify(merchantProfile));
+      
+      // Check if we have a valid profile object
+      if (!merchantProfile || typeof merchantProfile !== 'object') {
+        console.error('Invalid profile data received:', merchantProfile);
+        return false;
+      }
 
       // Determine public key, with fallbacks
       let publicKey = '';
@@ -76,7 +84,7 @@ export const useProfileData = () => {
         console.log('Falling back to nip05-derived public key:', publicKey);
       }
 
-      // Convert backend format to our app format
+      // Convert backend format to our app format with null fallbacks for each field
       setProfile({
         name: merchantProfile.name || '',
         displayName: merchantProfile.display_name || '',
@@ -108,4 +116,3 @@ export const useProfileData = () => {
     fetchProfileData
   };
 };
-

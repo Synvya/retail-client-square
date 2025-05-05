@@ -6,8 +6,11 @@ export const getMerchantProfile = async () => {
   try {
     console.log('Fetching merchant profile from:', `${api.defaults.baseURL}/square/profile`);
     const response = await api.get('/square/profile');
+    console.log('Profile response status:', response.status);
+    console.log('Profile response data type:', typeof response.data);
     console.log('Profile response:', response.data);
 
+    // Add validation for expected structure
     if (response.data && !response.data.public_key) {
       console.warn('Warning: The merchant profile does not contain a public_key field:', response.data);
     }
@@ -15,6 +18,7 @@ export const getMerchantProfile = async () => {
     return response.data;
   } catch (error) {
     console.error('Error fetching merchant profile:', error);
+    console.error('Error details:', error.response?.data || 'No response data');
     throw error;
   }
 };
