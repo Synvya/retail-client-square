@@ -39,6 +39,8 @@ export interface ProfileContextType {
   isLoading: boolean;
   republishProfile: () => Promise<boolean>;
   fetchProfileData?: () => Promise<boolean>;
+  clearAuthData?: () => void;
+  isAuthenticated?: boolean;
 }
 
 export const defaultProfile: Profile = {

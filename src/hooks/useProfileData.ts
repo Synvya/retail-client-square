@@ -7,6 +7,7 @@ import { getMerchantProfile } from '@/services/api';
 export const useProfileData = () => {
   const [profile, setProfile] = useState<Profile>(defaultProfile);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   // Check if user is already authenticated on mount
   useEffect(() => {
@@ -14,14 +15,21 @@ export const useProfileData = () => {
     const token = localStorage.getItem('access_token');
     const merchantId = localStorage.getItem('merchant_id');
     const profilePublished = localStorage.getItem('profile_published') === 'true';
-
+    const lastAuthTimestamp = localStorage.getItem('auth_timestamp');
+    
     console.log('Checking for stored credentials');
     console.log('Access token exists:', !!token);
     console.log('Merchant ID exists:', !!merchantId);
     console.log('Profile published:', profilePublished);
-
-    if (token && merchantId) {
-      console.log('Credentials found, fetching profile data');
+    console.log('Last auth timestamp:', lastAuthTimestamp);
+    
+    // Check if tokens exist AND are not expired (using a 24-hour expiration for safety)
+    const isTokenValid = token && merchantId && lastAuthTimestamp && 
+      (Date.now() - parseInt(lastAuthTimestamp)) < 24 * 60 * 60 * 1000;
+    
+    if (isTokenValid) {
+      console.log('Valid credentials found, fetching profile data');
+      setIsAuthenticated(true);
       setIsLoading(true);
       fetchProfileData()
         .then(success => {
@@ -35,9 +43,7 @@ export const useProfileData = () => {
           } else {
             console.error('Failed to fetch profile data');
             // On failure, clear tokens
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('merchant_id');
-            localStorage.removeItem('profile_published');
+            clearAuthData();
           }
         })
         .catch(err => {
@@ -45,17 +51,30 @@ export const useProfileData = () => {
           // If token is invalid, clear storage
           if (err.response?.status === 401) {
             console.log('Unauthorized access, clearing credentials');
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('merchant_id');
-            localStorage.removeItem('profile_published');
+            clearAuthData();
           }
           toast.error('Failed to load profile data');
         })
         .finally(() => setIsLoading(false));
+    } else if (token || merchantId) {
+      console.log('Found expired or invalid credentials, clearing');
+      clearAuthData();
     } else {
       console.log('No credentials found');
+      setIsAuthenticated(false);
     }
   }, []);
+
+  // Function to clear authentication data
+  const clearAuthData = () => {
+    console.log('Clearing authentication data');
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('merchant_id');
+    localStorage.removeItem('profile_published');
+    localStorage.removeItem('auth_timestamp');
+    setIsAuthenticated(false);
+    setProfile(defaultProfile);
+  };
 
   // Function to fetch profile data from the backend
   const fetchProfileData = async () => {
@@ -117,6 +136,8 @@ export const useProfileData = () => {
     setProfile,
     isLoading,
     setIsLoading,
-    fetchProfileData
+    fetchProfileData,
+    clearAuthData,
+    isAuthenticated
   };
 };

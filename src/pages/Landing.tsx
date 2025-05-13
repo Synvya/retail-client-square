@@ -16,7 +16,8 @@ const Landing = () => {
     oauthError, 
     handleConnectWithSquare, 
     processOAuthCallback,
-    isConnected
+    isConnected,
+    clearAuthData
   } = useOAuthHandler();
 
   useEffect(() => {
@@ -40,8 +41,11 @@ const Landing = () => {
     if (hasOAuthParams) {
       console.log('OAuth parameters detected, processing callback');
       processOAuthCallback();
+    } else {
+      console.log('No OAuth parameters detected, ensuring fresh state');
+      clearAuthData && clearAuthData();
     }
-  }, [isConnected, navigate, processOAuthCallback]);
+  }, [isConnected, navigate, processOAuthCallback, clearAuthData]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white p-4">

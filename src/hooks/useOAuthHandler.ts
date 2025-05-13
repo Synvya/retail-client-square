@@ -6,11 +6,24 @@ import { useProfile } from '@/context/ProfileContext';
 import { useNavigate } from 'react-router-dom';
 
 export const useOAuthHandler = () => {
-  const { connectWithSquare, profile, fetchProfileData } = useProfile();
+  const { connectWithSquare, profile, fetchProfileData, clearAuthData } = useProfile();
   const navigate = useNavigate();
   const [isInitiatingOAuth, setIsInitiatingOAuth] = useState(false);
   const [oauthError, setOauthError] = useState<string | null>(null);
   const [windowListener, setWindowListener] = useState(false);
+
+  // Clear any existing auth data when first loading the landing page
+  useEffect(() => {
+    const isCallbackUrl = window.location.pathname.includes('/auth/callback') || 
+                         window.location.search.includes('code=') || 
+                         window.location.hash.includes('code=');
+    
+    // Only clear auth data if we're on the landing page and not processing a callback
+    if (!isCallbackUrl && window.location.pathname === '/') {
+      console.log('On landing page and not processing callback, clearing previous auth data');
+      clearAuthData && clearAuthData();
+    }
+  }, [clearAuthData]);
 
   // Add a message listener for the OAuth popup window
   useEffect(() => {
@@ -31,10 +44,14 @@ export const useOAuthHandler = () => {
             setOauthError(`Square authorization failed: ${data.error}`);
             toast.error(`Square authorization failed: ${data.error}`);
           } else if (data.accessToken && data.merchantId) {
-            // Store tokens
+            // Clear any existing auth data first
+            clearAuthData && clearAuthData();
+            
+            // Store tokens and timestamp
             localStorage.setItem('access_token', data.accessToken);
             localStorage.setItem('merchant_id', data.merchantId);
             localStorage.setItem('profile_published', data.profilePublished || 'false');
+            localStorage.setItem('auth_timestamp', Date.now().toString());
             
             toast.success('Successfully connected with Square!');
             connectWithSquare().then(success => {
@@ -73,7 +90,7 @@ export const useOAuthHandler = () => {
         window.removeEventListener('message', handleOAuthMessage);
       }
     };
-  }, [connectWithSquare, navigate, windowListener, fetchProfileData]);
+  }, [connectWithSquare, navigate, windowListener, fetchProfileData, clearAuthData]);
 
   const handleConnectWithSquare = async (backendStatus: 'checking' | 'online' | 'offline') => {
     console.log('Connect with Square button clicked');
@@ -143,10 +160,14 @@ export const useOAuthHandler = () => {
       console.log('Merchant ID:', merchantId);
       console.log('Profile published status:', profilePublished);
       
-      // Store tokens and profile status
+      // Clear any existing auth data first
+      clearAuthData && clearAuthData();
+      
+      // Store tokens and timestamp
       localStorage.setItem('access_token', accessToken);
       localStorage.setItem('merchant_id', merchantId);
       localStorage.setItem('profile_published', profilePublished || 'false');
+      localStorage.setItem('auth_timestamp', Date.now().toString());
       
       // Clean URL after processing OAuth parameters
       if (window.history && window.history.replaceState) {
@@ -178,7 +199,7 @@ export const useOAuthHandler = () => {
     }
     
     return false;
-  }, [connectWithSquare, navigate, fetchProfileData]);
+  }, [connectWithSquare, navigate, fetchProfileData, clearAuthData]);
 
   return {
     isInitiatingOAuth,
@@ -186,6 +207,7 @@ export const useOAuthHandler = () => {
     handleConnectWithSquare,
     processOAuthCallback,
     isConnected: profile.isConnected,
-    fetchProfileData
+    fetchProfileData,
+    clearAuthData
   };
 };
