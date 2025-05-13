@@ -1,5 +1,4 @@
-# Synvya Retail Commerce Client
-## Square
+# Synvya Retail Commerce Client for Square 
 
 Frontend web client for the Synvya Retail Commerce platform, providing the tools for small businesses to publish their product portfolio in an AI-friendly way.
 
