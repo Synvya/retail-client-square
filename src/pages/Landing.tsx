@@ -91,7 +91,7 @@ const Landing = () => {
           >
             I have read and agree to be bound by the{' '}
             <a 
-              href="https://drive.proton.me/urls/4QAMQ93S6R#jOSlkZaYG7Wj" 
+              href="https://www.synvya.com/#scr-terms" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="text-blue-600 hover:underline"
@@ -100,7 +100,7 @@ const Landing = () => {
             </a>{' '}
             and{' '}
             <a 
-              href="https://drive.proton.me/urls/WDW2TJ2AGR#XaL2qdXQmDgw" 
+              href="https://www.synvya.com/#scr-privacy" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="text-blue-600 hover:underline"
