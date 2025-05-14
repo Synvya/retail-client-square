@@ -1,7 +1,8 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import Logo from '@/components/Logo';
 import { useBackendConnection } from '@/hooks/useBackendConnection';
 import { useOAuthHandler } from '@/hooks/useOAuthHandler';
@@ -10,6 +11,7 @@ import OAuthErrorAlert from '@/components/landing/OAuthErrorAlert';
 
 const Landing = () => {
   const navigate = useNavigate();
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const { backendStatus, isCheckingConnection, checkBackendConnection } = useBackendConnection();
   const { 
     isInitiatingOAuth, 
@@ -71,12 +73,44 @@ const Landing = () => {
           onClick={() => handleConnectWithSquare(backendStatus)}
           className="rounded-full text-lg py-6 px-10 border-2 border-synvya-dark bg-white text-synvya-dark hover:bg-gray-50"
           variant="outline"
-          disabled={isInitiatingOAuth || backendStatus !== 'online'}
+          disabled={isInitiatingOAuth || backendStatus !== 'online' || !termsAccepted}
         >
           {isInitiatingOAuth ? 'Connecting...' : 'Connect with Square'}
         </Button>
         
-        <p className="text-sm text-gray-500 mt-3 text-center">
+        <div className="flex items-start space-x-2 mt-4 mb-3 w-full max-w-md">
+          <Checkbox 
+            id="terms" 
+            checked={termsAccepted} 
+            onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+            className="mt-1"
+          />
+          <label 
+            htmlFor="terms" 
+            className="text-sm text-gray-700 cursor-pointer"
+          >
+            I have read and agree to be bound by the{' '}
+            <a 
+              href="https://drive.proton.me/urls/4QAMQ93S6R#jOSlkZaYG7Wj" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-blue-600 hover:underline"
+            >
+              Terms of Service
+            </a>{' '}
+            and{' '}
+            <a 
+              href="https://drive.proton.me/urls/WDW2TJ2AGR#XaL2qdXQmDgw" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-blue-600 hover:underline"
+            >
+              Privacy Policy
+            </a>.
+          </label>
+        </div>
+        
+        <p className="text-sm text-gray-500 text-center">
           Log in to your Square account on a separate tab before clicking on Connect with Square
         </p>
       </div>
